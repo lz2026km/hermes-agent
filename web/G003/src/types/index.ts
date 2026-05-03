@@ -394,6 +394,10 @@ export interface CriticalValue {
   readByPatient?: boolean;    // 患者/家属已知悉
   readTime?: string;           // 已知悉时间
   autoEscalation?: boolean;   // 是否自动升级过
+  // ===== v0.3.0 增强: 转随访 & 闭环追踪 =====
+  convertedToFollowUp?: boolean;     // 是否已转随访
+  followUpRecordId?: string;          // 关联的随访记录ID
+  scheduledFollowUpDate?: string;     // 计划随访日期
   // ===== 危急值日志链（每次生命周期状态变更生成一条记录） =====
   logs?: CriticalValueLog[];
 }

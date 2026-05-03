@@ -1,10 +1,10 @@
-// @ts-nocheck
 // ============================================================
 // G003 超声RIS系统 - 统计分析页面
 // 多图表数据展示 · 深度优化版
 // 新增：预测分析 | 医生绩效 | 同比环比 | 时段热力图 | SVG图表升级
+// 新增：医生工作量统计 | 追踪符合率统计 | 设备使用效率
 // ============================================================
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import {
   Activity, FileText, ShieldCheck, AlertTriangle,
@@ -14,13 +14,14 @@ import {
   ArrowUpRight, ArrowDownRight, Target, Award,
   ShieldAlert, Eye, AlertCircle, TrendingDown as TrendDownIcon,
   Bell, CheckSquare, XSquare, ClipboardCheck, Search,
-  Inbox, RefreshCw, Download, FileUp
+  Inbox, RefreshCw, Download, FileUp, Stethoscope,
+  Image as ImageIcon, Monitor, Cpu
 } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis,
-  ComposedChart
+  ComposedChart, ReferenceLine
 } from 'recharts'
 import { initialStatisticsData } from '../data/initialData'
 
@@ -103,6 +104,36 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
     fontWeight: 500,
     minHeight: 44,
+  },
+  // Tab导航
+  tabNav: {
+    display: 'flex',
+    gap: 4,
+    marginBottom: 24,
+    background: '#f8fafc',
+    padding: 6,
+    borderRadius: 10,
+    flexWrap: 'wrap',
+  },
+  tabBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '10px 16px',
+    borderRadius: 6,
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#64748b',
+    transition: 'all 0.2s',
+    minHeight: 44,
+  },
+  tabBtnActive: {
+    background: '#fff',
+    color: '#1a365d',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
   // 今日指标行
   todayRow: {
@@ -655,6 +686,165 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 12,
     opacity: 0.9,
   },
+
+  // ===== 新增样式：医生工作量统计 =====
+  workloadTabContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 24,
+  },
+  workloadStatsRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(6, 1fr)',
+    gap: 12,
+    marginBottom: 8,
+  },
+  workloadStatCard: {
+    background: '#fff',
+    borderRadius: 10,
+    padding: '16px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    textAlign: 'center' as const,
+  },
+  workloadStatValue: {
+    fontSize: 22, fontWeight: 700, color: '#1a3a5c',
+  },
+  workloadStatLabel: {
+    fontSize: 11, color: '#64748b', marginTop: 4,
+  },
+  workloadTable: {
+    width: '100%',
+    borderCollapse: 'collapse' as const,
+    background: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
+  workloadTh: {
+    padding: '14px 16px',
+    textAlign: 'left' as const,
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#64748b',
+    background: '#f8fafc',
+    borderBottom: '1px solid #e2e8f0',
+  },
+  workloadTd: {
+    padding: '14px 16px',
+    fontSize: 13,
+    color: '#1a3a5c',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  medalBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 24,
+    height: 24,
+    borderRadius: '50%',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#fff',
+    marginRight: 8,
+  },
+  positiveRateBar: {
+    height: 6,
+    borderRadius: 3,
+    background: '#f1f5f9',
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  positiveRateFill: {
+    height: '100%',
+    borderRadius: 3,
+    transition: 'width 0.3s',
+  },
+
+  // ===== 新增样式：追踪符合率统计 =====
+  complianceTabContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 24,
+  },
+  complianceMetricsRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 12,
+    marginBottom: 8,
+  },
+  complianceMetricCard: {
+    background: '#fff',
+    borderRadius: 10,
+    padding: '16px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
+  complianceMetricLabel: {
+    fontSize: 11, color: '#64748b', marginBottom: 4,
+  },
+  complianceMetricValue: {
+    fontSize: 22, fontWeight: 700, color: '#1a3a5c',
+  },
+  complianceMetricTrend: {
+    fontSize: 11, marginTop: 4, display: 'flex', alignItems: 'center', gap: 2,
+  },
+  baselineLegend: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 8,
+    flexWrap: 'wrap' as const,
+  },
+  baselineLegendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 12,
+    color: '#64748b',
+  },
+  baselineDot: {
+    width: 12,
+    height: 3,
+    borderRadius: 2,
+  },
+
+  // ===== 新增样式：设备使用效率 =====
+  equipmentTabContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 24,
+  },
+  equipmentStatsRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 12,
+    marginBottom: 8,
+  },
+  equipmentMetricCard: {
+    background: '#fff',
+    borderRadius: 10,
+    padding: '16px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
+  equipmentMetricLabel: {
+    fontSize: 11, color: '#64748b', marginBottom: 4,
+  },
+  equipmentMetricValue: {
+    fontSize: 22, fontWeight: 700, color: '#1a3a5c',
+  },
+  equipmentChartCard: {
+    background: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
+  equipmentTable: {
+    width: '100%',
+    borderCollapse: 'collapse' as const,
+    background: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
 }
 
 const PIE_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#14b8a6']
@@ -667,11 +857,15 @@ const tooltipStyle = {
   labelStyle: { color: '#1a3a5c', fontWeight: 600 },
 }
 
+// Tab类型
+type TabType = 'overview' | 'workload' | 'compliance' | 'equipment'
+
 // ============ 统计分析页面 ============
 export default function StatisticsPage() {
   const stats = initialStatisticsData
   const [timeRange, setTimeRange] = useState('7d')
   const [deptFilter, setDeptFilter] = useState('全部')
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
 
   // 合并趋势数据
   const trendData = stats.examTrend.map((item, i) => ({
@@ -689,6 +883,79 @@ export default function StatisticsPage() {
     { name: '不合格', value: 100 - stats.monthDisinfectionPassRate, color: '#ef4444' },
   ]
 
+  // ========== 医生工作量统计数据 ==========
+  const doctorWorkloadData = useMemo(() => [
+    { name: '张明', exams: 328, reports: 315, positiveRate: 42.5, modifyCount: 12, modifyRate: 3.7 },
+    { name: '李娜', exams: 296, reports: 289, positiveRate: 38.2, modifyCount: 8, modifyRate: 2.7 },
+    { name: '王强', exams: 275, reports: 268, positiveRate: 45.8, modifyCount: 15, modifyRate: 5.5 },
+    { name: '赵丽', exams: 258, reports: 252, positiveRate: 35.6, modifyCount: 6, modifyRate: 2.3 },
+    { name: '孙伟', exams: 234, reports: 228, positiveRate: 40.1, modifyCount: 10, modifyRate: 4.3 },
+    { name: '周芳', exams: 212, reports: 208, positiveRate: 33.9, modifyCount: 5, modifyRate: 2.4 },
+    { name: '吴涛', exams: 198, reports: 192, positiveRate: 37.5, modifyCount: 9, modifyRate: 4.5 },
+    { name: '郑雪', exams: 185, reports: 181, positiveRate: 41.2, modifyCount: 7, modifyRate: 3.8 },
+  ], [])
+
+  const sortedByExams = useMemo(() =>
+    [...doctorWorkloadData].sort((a, b) => b.exams - a.exams),
+    [doctorWorkloadData]
+  )
+
+  // ========== 追踪符合率数据 ==========
+  const complianceData = useMemo(() => [
+    { month: '1月', concordanceRate: 82.5, misdiagnosisRate: 5.2, firstVisitCount: 1208 },
+    { month: '2月', concordanceRate: 83.1, misdiagnosisRate: 4.8, firstVisitCount: 1085 },
+    { month: '3月', concordanceRate: 84.2, misdiagnosisRate: 4.5, firstVisitCount: 1320 },
+    { month: '4月', concordanceRate: 84.8, misdiagnosisRate: 4.3, firstVisitCount: 1245 },
+    { month: '5月', concordanceRate: 85.5, misdiagnosisRate: 4.1, firstVisitCount: 1380 },
+    { month: '6月', concordanceRate: 86.2, misdiagnosisRate: 3.9, firstVisitCount: 1298 },
+    { month: '7月', concordanceRate: 85.8, misdiagnosisRate: 4.0, firstVisitCount: 1356 },
+    { month: '8月', concordanceRate: 86.5, misdiagnosisRate: 3.7, firstVisitCount: 1420 },
+    { month: '9月', concordanceRate: 87.1, misdiagnosisRate: 3.5, firstVisitCount: 1385 },
+    { month: '10月', concordanceRate: 86.8, misdiagnosisRate: 3.6, firstVisitCount: 1452 },
+    { month: '11月', concordanceRate: 87.5, misdiagnosisRate: 3.4, firstVisitCount: 1510 },
+    { month: '12月', concordanceRate: 88.2, misdiagnosisRate: 3.2, firstVisitCount: 1498 },
+  ], [])
+
+  // ========== 设备使用效率数据 ==========
+  const equipmentData = useMemo(() => [
+    { name: '超声仪-01', model: 'Philips EPIC7', hoursPerDay: 6.5, maxHours: 8, utilization: 81.2, examCount: 186 },
+    { name: '超声仪-02', model: 'Samsung HM70', hoursPerDay: 7.2, maxHours: 8, utilization: 90.0, examCount: 205 },
+    { name: '超声仪-03', model: 'Mindray Resona7', hoursPerDay: 5.8, maxHours: 8, utilization: 72.5, examCount: 162 },
+    { name: '超声仪-04', model: 'Siemens ACUSON', hoursPerDay: 6.8, maxHours: 8, utilization: 85.0, examCount: 194 },
+    { name: '超声仪-05', model: 'GE Voluson E8', hoursPerDay: 7.5, maxHours: 8, utilization: 93.8, examCount: 218 },
+    { name: '超声仪-06', model: 'Toshiba Aplio', hoursPerDay: 4.2, maxHours: 8, utilization: 52.5, examCount: 98 },
+  ], [])
+
+  const avgUtilization = useMemo(() =>
+    (equipmentData.reduce((sum, e) => sum + e.utilization, 0) / equipmentData.length).toFixed(1),
+    [equipmentData]
+  )
+
+  const tabButtons: { key: TabType; label: string; icon: React.ReactNode }[] = [
+    { key: 'overview', label: '综合概览', icon: <BarChart3 size={14} /> },
+    { key: 'workload', label: '医生工作量统计', icon: <Stethoscope size={14} /> },
+    { key: 'compliance', label: '追踪符合率统计', icon: <ImageIcon size={14} /> },
+    { key: 'equipment', label: '设备使用效率', icon: <Monitor size={14} /> },
+  ]
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'workload':
+        return <DoctorWorkloadTab data={doctorWorkloadData} sortedData={sortedByExams} />
+      case 'compliance':
+        return <ComplianceTab data={complianceData} />
+      case 'equipment':
+        return <EquipmentTab data={equipmentData} avgUtilization={avgUtilization} />
+      default:
+        return <OverviewContent
+          stats={stats}
+          trendData={trendData}
+          totalExams={totalExams}
+          disinfectionData={disinfectionData}
+        />
+    }
+  }
+
   return (
     <div style={s.root}>
       {/* 标题区 */}
@@ -699,38 +966,76 @@ export default function StatisticsPage() {
         </div>
       </div>
 
-      {/* 筛选栏 */}
-      <div style={s.filterBar}>
-        <div style={s.filterLabel}>
-          <Calendar size={14} />
-          时间范围
-        </div>
-        <select
-          style={s.filterSelect}
-          value={timeRange}
-          onChange={e => setTimeRange(e.target.value)}
-        >
-          <option value="7d">近7天</option>
-          <option value="30d">近30天</option>
-          <option value="90d">近90天</option>
-          <option value="year">本年度</option>
-        </select>
-
-        <div style={{ ...s.filterLabel, marginLeft: 16 }}>
-          <Filter size={14} />
-          科室筛选
-        </div>
-        <select
-          style={s.filterSelect}
-          value={deptFilter}
-          onChange={e => setDeptFilter(e.target.value)}
-        >
-          <option value="全部">全部科室</option>
-          <option value="消化内科">消化内科</option>
-          <option value="超声中心">超声中心</option>
-        </select>
+      {/* Tab导航 */}
+      <div style={s.tabNav}>
+        {tabButtons.map((tab) => (
+          <button
+            key={tab.key}
+            style={{
+              ...s.tabBtn,
+              ...(activeTab === tab.key ? s.tabBtnActive : {}),
+            }}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
       </div>
 
+      {/* 筛选栏 - 仅概览显示 */}
+      {activeTab === 'overview' && (
+        <div style={s.filterBar}>
+          <div style={s.filterLabel}>
+            <Calendar size={14} />
+            时间范围
+          </div>
+          <select
+            style={s.filterSelect}
+            value={timeRange}
+            onChange={e => setTimeRange(e.target.value)}
+          >
+            <option value="7d">近7天</option>
+            <option value="30d">近30天</option>
+            <option value="90d">近90天</option>
+            <option value="year">本年度</option>
+          </select>
+
+          <div style={{ ...s.filterLabel, marginLeft: 16 }}>
+            <Filter size={14} />
+            科室筛选
+          </div>
+          <select
+            style={s.filterSelect}
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+          >
+            <option value="全部">全部科室</option>
+            <option value="消化内科">消化内科</option>
+            <option value="超声中心">超声中心</option>
+          </select>
+        </div>
+      )}
+
+      {/* Tab内容 */}
+      {renderTabContent()}
+    </div>
+  )
+}
+
+// ================================================================
+// Overview内容（原有内容封装）
+// ================================================================
+interface OverviewContentProps {
+  stats: typeof initialStatisticsData
+  trendData: { date: string; 检查数: number; 报告数: number }[]
+  totalExams: number
+  disinfectionData: { name: string; value: number; color: string }[]
+}
+
+function OverviewContent({ stats, trendData, totalExams, disinfectionData }: OverviewContentProps) {
+  return (
+    <>
       {/* 今日概览卡片 */}
       <div style={s.todayRow}>
         <TodayCard
@@ -762,8 +1067,8 @@ export default function StatisticsPage() {
         />
         <TodayCard
           icon={AlertTriangle}
-          iconBg={stats.todayCriticalValueCount > 0 ? s.red.backgroundColor : '#f1f5f9'}
-          iconColor={stats.todayCriticalValueCount > 0 ? s.red.color : '#94a3b8'}
+          iconBg={stats.todayCriticalValueCount > 0 ? (s.red.backgroundColor as string) : '#f1f5f9'}
+          iconColor={stats.todayCriticalValueCount > 0 ? (s.red.color as string) : '#94a3b8'}
           value={stats.todayCriticalValueCount}
           label="今日危急值"
           trend={stats.todayCriticalValueCount > 0 ? '⚠ 待处理' : '无异常'}
@@ -914,31 +1219,31 @@ export default function StatisticsPage() {
             label="本月检查总量"
             value={stats.monthExamCount}
             unit="例"
-            borderColor={s.blue.color}
+            borderColor={s.blue.color as string}
           />
           <MonthCard
             label="报告完成率"
             value={stats.monthReportCompletionRate}
             unit="%"
-            borderColor={s.green.color}
+            borderColor={s.green.color as string}
           />
           <MonthCard
             label="腹部超声平均拍照"
-            value={stats.monthGastroscopyAvgPhotos}
+            value={stats.monthUltrasoundAvgPhotos}
             unit="张"
-            borderColor={s.purple.color}
+            borderColor={s.purple.color as string}
           />
           <MonthCard
             label="洗消合格率"
             value={stats.monthDisinfectionPassRate}
             unit="%"
-            borderColor={s.teal.color}
+            borderColor={s.teal.color as string}
           />
           <MonthCard
             label="本月危急值"
             value={stats.monthCriticalValueCount}
             unit="例"
-            borderColor={s.red.color}
+            borderColor={s.red.color as string}
             isAlert={stats.monthCriticalValueCount > 0}
           />
         </div>
@@ -1014,11 +1319,11 @@ export default function StatisticsPage() {
       <div style={s.qcRow}>
         <QCCard
           title="腹部超声拍照质控"
-          value={stats.monthGastroscopyAvgPhotos}
+          value={stats.monthUltrasoundAvgPhotos}
           minValue={22}
           unit="张"
           desc="≥22张为达标"
-          color={s.blue.color}
+          color={s.blue.color as string}
           icon={Microscope}
         />
         <QCCard
@@ -1027,9 +1332,522 @@ export default function StatisticsPage() {
           minValue={95}
           unit="%"
           desc="目标≥95%"
-          color={s.teal.color}
+          color={s.teal.color as string}
           icon={ShieldCheck}
         />
+      </div>
+    </>
+  )
+}
+
+// ================================================================
+// 新增Tab：医生工作量统计
+// ================================================================
+interface DoctorWorkloadTabProps {
+  data: { name: string; exams: number; reports: number; positiveRate: number; modifyCount: number; modifyRate: number }[]
+  sortedData: { name: string; exams: number; reports: number; positiveRate: number; modifyCount: number; modifyRate: number }[]
+}
+
+function DoctorWorkloadTab({ data, sortedData }: DoctorWorkloadTabProps) {
+  const totalExams = data.reduce((sum, d) => sum + d.exams, 0)
+  const totalReports = data.reduce((sum, d) => sum + d.reports, 0)
+  const avgPositiveRate = (data.reduce((sum, d) => sum + d.positiveRate, 0) / data.length).toFixed(1)
+  const totalModifies = data.reduce((sum, d) => sum + d.modifyCount, 0)
+  const avgModifyRate = (data.reduce((sum, d) => sum + d.modifyRate, 0) / data.length).toFixed(1)
+
+  const medalColors = ['#fbbf24', '#9ca3af', '#cd7c2d']
+  const medalLabels = ['🥇', '🥈', '🥉']
+
+  return (
+    <div style={s.workloadTabContainer}>
+      {/* 汇总指标 */}
+      <div style={s.workloadStatsRow}>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{totalExams}</div>
+          <div style={s.workloadStatLabel}>总检查量</div>
+        </div>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{totalReports}</div>
+          <div style={s.workloadStatLabel}>总报告数</div>
+        </div>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{avgPositiveRate}%</div>
+          <div style={s.workloadStatLabel}>平均阳性检出率</div>
+        </div>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{totalModifies}</div>
+          <div style={s.workloadStatLabel}>总修改次数</div>
+        </div>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{avgModifyRate}%</div>
+          <div style={s.workloadStatLabel}>平均修改率</div>
+        </div>
+        <div style={s.workloadStatCard}>
+          <div style={s.workloadStatValue}>{data.length}</div>
+          <div style={s.workloadStatLabel}>参与医生</div>
+        </div>
+      </div>
+
+      {/* 横向柱状图 */}
+      <div style={s.chartCard}>
+        <div style={s.chartTitle}>
+          <Stethoscope size={16} style={s.chartIcon} />
+          医生工作量排名（按检查数量）
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart
+            data={sortedData}
+            layout="vertical"
+            barCategoryGap="25%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              tick={{ fontSize: 12, fill: '#64748b' }}
+              width={60}
+            />
+            <Tooltip {...tooltipStyle} />
+            <Bar
+              dataKey="exams"
+              fill="#1a365d"
+              radius={[0, 4, 4, 0]}
+              name="检查数量"
+            >
+              {sortedData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={index < 3 ? medalColors[index] : '#1a365d'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 数据表格 */}
+      <div style={s.chartCard}>
+        <div style={s.chartTitle}>
+          <FileText size={16} style={s.chartIcon} />
+          医生工作量详细数据
+        </div>
+        <table style={s.workloadTable}>
+          <thead>
+            <tr>
+              <th style={s.workloadTh}>排名</th>
+              <th style={s.workloadTh}>医生姓名</th>
+              <th style={s.workloadTh}>检查数量</th>
+              <th style={s.workloadTh}>报告数量</th>
+              <th style={s.workloadTh}>阳性检出率</th>
+              <th style={s.workloadTh}>修改报告次数</th>
+              <th style={s.workloadTh}>修改率</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedData.map((doc, idx) => (
+              <tr key={doc.name}>
+                <td style={s.workloadTd}>
+                  {idx < 3 ? (
+                    <span style={{
+                      ...s.medalBadge,
+                      background: medalColors[idx],
+                    }}>
+                      {idx + 1}
+                    </span>
+                  ) : (
+                    <span style={{
+                      display: 'inline-block',
+                      width: 24,
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      color: '#64748b',
+                    }}>
+                      {idx + 1}
+                    </span>
+                  )}
+                </td>
+                <td style={{ ...s.workloadTd, fontWeight: 500 }}>
+                  {idx < 3 && (
+                    <span style={{ marginRight: 6 }}>{medalLabels[idx]}</span>
+                  )}
+                  {doc.name}
+                </td>
+                <td style={s.workloadTd}>{doc.exams}</td>
+                <td style={s.workloadTd}>{doc.reports}</td>
+                <td style={s.workloadTd}>
+                  <span style={{ color: doc.positiveRate >= 40 ? '#22c55e' : '#64748b' }}>
+                    {doc.positiveRate}%
+                  </span>
+                  <div style={s.positiveRateBar}>
+                    <div style={{
+                      ...s.positiveRateFill,
+                      width: `${doc.positiveRate}%`,
+                      background: doc.positiveRate >= 40 ? '#22c55e' : '#94a3b8',
+                    }} />
+                  </div>
+                </td>
+                <td style={s.workloadTd}>{doc.modifyCount}</td>
+                <td style={{
+                  ...s.workloadTd,
+                  color: doc.modifyRate > 4 ? '#ef4444' : doc.modifyRate > 3 ? '#f97316' : '#22c55e',
+                }}>
+                  {doc.modifyRate}%
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ================================================================
+// 新增Tab：追踪符合率统计
+// ================================================================
+interface ComplianceTabProps {
+  data: { month: string; concordanceRate: number; misdiagnosisRate: number; firstVisitCount: number }[]
+}
+
+function ComplianceTab({ data }: ComplianceTabProps) {
+  const latestRate = data[data.length - 1].concordanceRate
+  const avgRate = (data.reduce((sum, d) => sum + d.concordanceRate, 0) / data.length).toFixed(1)
+  const latestMisRate = data[data.length - 1].misdiagnosisRate
+  const totalFirstVisits = data.reduce((sum, d) => sum + d.firstVisitCount, 0)
+
+  return (
+    <div style={s.complianceTabContainer}>
+      {/* 汇总指标 */}
+      <div style={s.complianceMetricsRow}>
+        <div style={s.complianceMetricCard}>
+          <div style={s.complianceMetricLabel}>最新符合率</div>
+          <div style={{ ...s.complianceMetricValue, color: latestRate >= 85 ? '#22c55e' : '#f97316' }}>
+            {latestRate}%
+          </div>
+          <div style={{
+            ...s.complianceMetricTrend,
+            color: latestRate >= 85 ? '#22c55e' : '#f97316',
+          }}>
+            {latestRate >= 85 ? <CheckCircle size={11} /> : <AlertCircle size={11} />}
+            {latestRate >= 85 ? '高于标准' : '低于标准85%'}
+          </div>
+        </div>
+        <div style={s.complianceMetricCard}>
+          <div style={s.complianceMetricLabel}>平均符合率</div>
+          <div style={s.complianceMetricValue}>{avgRate}%</div>
+          <div style={{ ...s.complianceMetricTrend, color: '#3b82f6' }}>
+            <Activity size={11} />
+            年度均值
+          </div>
+        </div>
+        <div style={s.complianceMetricCard}>
+          <div style={s.complianceMetricLabel}>最新误诊率</div>
+          <div style={{ ...s.complianceMetricValue, color: latestMisRate < 4 ? '#22c55e' : '#f97316' }}>
+            {latestMisRate}%
+          </div>
+          <div style={{
+            ...s.complianceMetricTrend,
+            color: latestMisRate < 4 ? '#22c55e' : '#f97316',
+          }}>
+            {latestMisRate < 4 ? <TrendingDown size={11} /> : <AlertCircle size={11} />}
+            {latestMisRate < 4 ? '控制良好' : '需关注'}
+          </div>
+        </div>
+        <div style={s.complianceMetricCard}>
+          <div style={s.complianceMetricLabel}>年度初诊总量</div>
+          <div style={s.complianceMetricValue}>{totalFirstVisits.toLocaleString()}</div>
+          <div style={{ ...s.complianceMetricTrend, color: '#64748b' }}>
+            <Users size={11} />
+            12个月累计
+          </div>
+        </div>
+      </div>
+
+      {/* 折线图 */}
+      <div style={s.chartCard}>
+        <div style={s.chartTitle}>
+          <ImageIcon size={16} style={s.chartIcon} />
+          追踪符合率趋势分析
+        </div>
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+            <YAxis
+              yAxisId="left"
+              domain={[75, 95]}
+              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              label={{ value: '符合率(%)', angle: -90, position: 'insideLeft', fontSize: 11, fill: '#94a3b8' }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 2000]}
+              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              label={{ value: '初诊数量', angle: 90, position: 'insideRight', fontSize: 11, fill: '#94a3b8' }}
+            />
+            <Tooltip {...tooltipStyle} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            {/* 行业基准线 */}
+            <ReferenceLine
+              yAxisId="left"
+              y={85}
+              stroke="#ef4444"
+              strokeDasharray="6 3"
+              strokeWidth={2}
+              label={{ value: '行业标准85%', position: 'right', fontSize: 11, fill: '#ef4444' }}
+            />
+            {/* 初诊→复诊影像符合率 */}
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="concordanceRate"
+              stroke="#1a365d"
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: '#1a365d' }}
+              activeDot={{ r: 6 }}
+              name="初诊→复诊影像符合率(%)"
+            />
+            {/* 初诊误诊率趋势 */}
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="misdiagnosisRate"
+              stroke="#f97316"
+              strokeWidth={2}
+              strokeDasharray="5 2"
+              dot={{ r: 3, fill: '#f97316' }}
+              activeDot={{ r: 5 }}
+              name="初诊误诊率(%)"
+            />
+            {/* 初诊数量 */}
+            <Bar
+              yAxisId="right"
+              dataKey="firstVisitCount"
+              fill="#e2e8f0"
+              radius={[4, 4, 0, 0]}
+              name="初诊数量"
+              opacity={0.6}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+
+        {/* 图例说明 */}
+        <div style={s.baselineLegend}>
+          <div style={s.baselineLegendItem}>
+            <div style={{ ...s.baselineDot, background: '#1a365d' }} />
+            初诊→复诊影像符合率趋势
+          </div>
+          <div style={s.baselineLegendItem}>
+            <div style={{ ...s.baselineDot, background: '#f97316' }} />
+            初诊误诊率趋势
+          </div>
+          <div style={s.baselineLegendItem}>
+            <div style={{ ...s.baselineDot, background: '#e2e8f0' }} />
+            初诊数量
+          </div>
+          <div style={s.baselineLegendItem}>
+            <div style={{ ...s.baselineDot, background: '#ef4444' }} />
+            行业标准基准线(85%)
+          </div>
+        </div>
+      </div>
+
+      {/* 月度明细表 */}
+      <div style={s.chartCard}>
+        <div style={s.chartTitle}>
+          <FileText size={16} style={s.chartIcon} />
+          月度符合率明细
+        </div>
+        <table style={s.workloadTable}>
+          <thead>
+            <tr>
+              <th style={s.workloadTh}>月份</th>
+              <th style={s.workloadTh}>符合率</th>
+              <th style={s.workloadTh}>误诊率</th>
+              <th style={s.workloadTh}>初诊数量</th>
+              <th style={s.workloadTh}>与标准差</th>
+              <th style={s.workloadTh}>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => {
+              const diff = (row.concordanceRate - 85).toFixed(1)
+              const isAbove = row.concordanceRate >= 85
+              return (
+                <tr key={row.month}>
+                  <td style={s.workloadTd}>{row.month}</td>
+                  <td style={{ ...s.workloadTd, fontWeight: 600, color: isAbove ? '#22c55e' : '#ef4444' }}>
+                    {row.concordanceRate}%
+                  </td>
+                  <td style={{ ...s.workloadTd, color: row.misdiagnosisRate < 4 ? '#22c55e' : '#f97316' }}>
+                    {row.misdiagnosisRate}%
+                  </td>
+                  <td style={s.workloadTd}>{row.firstVisitCount.toLocaleString()}</td>
+                  <td style={{ ...s.workloadTd, color: isAbove ? '#22c55e' : '#ef4444' }}>
+                    {isAbove ? '+' : ''}{diff}%
+                  </td>
+                  <td style={s.workloadTd}>
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      background: isAbove ? '#f0fdf4' : '#fef2f2',
+                      color: isAbove ? '#22c55e' : '#ef4444',
+                    }}>
+                      {isAbove ? '达标' : '未达标'}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ================================================================
+// 新增Tab：设备使用效率
+// ================================================================
+interface EquipmentTabProps {
+  data: { name: string; model: string; hoursPerDay: number; maxHours: number; utilization: number; examCount: number }[]
+  avgUtilization: string
+}
+
+function EquipmentTab({ data, avgUtilization }: EquipmentTabProps) {
+  const totalExamCount = data.reduce((sum, d) => sum + d.examCount, 0)
+  const avgHours = (data.reduce((sum, d) => sum + d.hoursPerDay, 0) / data.length).toFixed(1)
+  const maxUtilization = Math.max(...data.map(d => d.utilization))
+
+  return (
+    <div style={s.equipmentTabContainer}>
+      {/* 汇总指标 */}
+      <div style={s.equipmentStatsRow}>
+        <div style={s.equipmentMetricCard}>
+          <div style={s.equipmentMetricLabel}>设备总数</div>
+          <div style={s.equipmentMetricValue}>{data.length}</div>
+        </div>
+        <div style={s.equipmentMetricCard}>
+          <div style={s.equipmentMetricLabel}>平均利用率</div>
+          <div style={{ ...s.equipmentMetricValue, color: Number(avgUtilization) >= 80 ? '#22c55e' : '#f97316' }}>
+            {avgUtilization}%
+          </div>
+        </div>
+        <div style={s.equipmentMetricCard}>
+          <div style={s.equipmentMetricLabel}>日均使用时长</div>
+          <div style={s.equipmentMetricValue}>{avgHours}h</div>
+        </div>
+        <div style={s.equipmentMetricCard}>
+          <div style={s.equipmentMetricLabel}>年度检查总量</div>
+          <div style={s.equipmentMetricValue}>{totalExamCount.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* 柱状图 */}
+      <div style={s.equipmentChartCard}>
+        <div style={s.chartTitle}>
+          <Monitor size={16} style={s.chartIcon} />
+          各超声设备日均使用时长
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={data} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+            <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+            <Tooltip {...tooltipStyle} formatter={(value: number) => [`${value} 小时/日`, '']} />
+            <Bar
+              dataKey="hoursPerDay"
+              fill="#1a365d"
+              radius={[4, 4, 0, 0]}
+              name="使用时长(h/日)"
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.utilization >= 90 ? '#22c55e' : entry.utilization >= 70 ? '#1a365d' : '#f97316'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{
+          display: 'flex',
+          gap: 16,
+          marginTop: 12,
+          justifyContent: 'center',
+          fontSize: 11,
+          color: '#64748b',
+        }}>
+          <span style={{ color: '#22c55e' }}>● 高利用率(≥90%)</span>
+          <span style={{ color: '#1a365d' }}>● 正常(70-90%)</span>
+          <span style={{ color: '#f97316' }}>● 低利用率(&lt;70%)</span>
+        </div>
+      </div>
+
+      {/* 利用率排名表 */}
+      <div style={s.equipmentChartCard}>
+        <div style={s.chartTitle}>
+          <Cpu size={16} style={s.chartIcon} />
+          设备使用效率详细数据
+        </div>
+        <table style={s.equipmentTable}>
+          <thead>
+            <tr>
+              <th style={s.workloadTh}>设备名称</th>
+              <th style={s.workloadTh}>型号</th>
+              <th style={s.workloadTh}>日均时长</th>
+              <th style={s.workloadTh}>日最大时长</th>
+              <th style={s.workloadTh}>利用率</th>
+              <th style={s.workloadTh}>年度检查量</th>
+              <th style={s.workloadTh}>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...data].sort((a, b) => b.utilization - a.utilization).map((eq, idx) => (
+              <tr key={eq.name}>
+                <td style={s.workloadTd}>
+                  {idx === 0 && <span style={{ marginRight: 4 }}>👑</span>}
+                  {eq.name}
+                </td>
+                <td style={s.workloadTd}>{eq.model}</td>
+                <td style={s.workloadTd}>{eq.hoursPerDay}h</td>
+                <td style={s.workloadTd}>{eq.maxHours}h</td>
+                <td style={s.workloadTd}>
+                  <span style={{
+                    fontWeight: 600,
+                    color: eq.utilization >= 90 ? '#22c55e' : eq.utilization >= 70 ? '#1a365d' : '#f97316',
+                  }}>
+                    {eq.utilization}%
+                  </span>
+                  <div style={s.positiveRateBar}>
+                    <div style={{
+                      ...s.positiveRateFill,
+                      width: `${eq.utilization}%`,
+                      background: eq.utilization >= 90 ? '#22c55e' : eq.utilization >= 70 ? '#1a365d' : '#f97316',
+                    }} />
+                  </div>
+                </td>
+                <td style={s.workloadTd}>{eq.examCount}</td>
+                <td style={s.workloadTd}>
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: 10,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    background: eq.utilization >= 85 ? '#f0fdf4' : '#fff7ed',
+                    color: eq.utilization >= 85 ? '#22c55e' : '#f97316',
+                  }}>
+                    {eq.utilization >= 85 ? '优良' : eq.utilization >= 70 ? '正常' : '低效'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
@@ -1042,7 +1860,6 @@ interface ADRSectionProps {
   stats: typeof initialStatisticsData
 }
 function ADRSection({ stats }: ADRSectionProps) {
-  // ADR趋势模拟数据（近30天）
   const adrTrendData = useMemo(() => {
     const dates = []
     const mild = []
@@ -1068,7 +1885,7 @@ function ADRSection({ stats }: ADRSectionProps) {
   }))
 
   const totalADR = adrCombined.reduce((sum, d) => sum + d.total, 0)
-  const severeCount = adrCombined.reduce((sum, d) => sum + d.severe, 0)
+  const severeCount = adrCombined.reduce((sum, d) => sum + d.重度, 0)
   const reportRate = 98.2
   const avgHandleTime = 4.2
 
@@ -1085,7 +1902,6 @@ function ADRSection({ stats }: ADRSectionProps) {
         </div>
       </div>
 
-      {/* ADR指标行 */}
       <div style={s.adrMetricRow}>
         <div style={s.adrMetricCard}>
           <div style={s.adrMetricLabel}>本月ADR上报</div>
@@ -1117,7 +1933,6 @@ function ADRSection({ stats }: ADRSectionProps) {
         </div>
       </div>
 
-      {/* ADR趋势图 */}
       <div style={s.adrChartArea}>
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
           近30天不良反应趋势（按严重程度分层）
@@ -1231,7 +2046,6 @@ function AntiSupervisionSection({ stats }: AntiSupervisionSectionProps) {
             </div>
           </div>
 
-          {/* 达标进度条 */}
           <div style={s.antiSuperProgressBar}>
             <div style={{
               ...s.antiSuperProgressFill,
@@ -1246,7 +2060,6 @@ function AntiSupervisionSection({ stats }: AntiSupervisionSectionProps) {
             <span>目标 {item.target}{item.unit}</span>
           </div>
 
-          {/* 待处理提示 */}
           {item.pending > 0 && (
             <div style={{
               marginTop: 10,
@@ -1295,8 +2108,8 @@ function OverallRateCard({ stats }: OverallRateCardProps) {
   const overallRate = Math.round(
     (stats.monthReportCompletionRate +
       stats.monthDisinfectionPassRate +
-      (stats.monthGastroscopyAvgPhotos / 22) * 100 +
-      (stats.monthColonoscopyAvgWithdrawal / 6) * 100) /
+      (stats.monthUltrasoundAvgPhotos / 22) * 100 +
+      (stats.monthUltrasoundAvgPhotos / 6) * 100) /
       4
   )
 
@@ -1326,11 +2139,11 @@ function OverallRateCard({ stats }: OverallRateCardProps) {
         </div>
         <div style={s.overallRateFooterItem}>
           <CheckCircle size={12} />
-          腹部超声质控 {((stats.monthGastroscopyAvgPhotos / 22) * 100).toFixed(0)}%
+          腹部超声质控 {((stats.monthUltrasoundAvgPhotos / 22) * 100).toFixed(0)}%
         </div>
         <div style={s.overallRateFooterItem}>
           <CheckCircle size={12} />
-          超声质控 {((stats.monthColonoscopyAvgWithdrawal / 6) * 100).toFixed(0)}%
+          超声质控 {((stats.monthUltrasoundAvgPhotos / 6) * 100).toFixed(0)}%
         </div>
       </div>
     </div>
@@ -1374,7 +2187,7 @@ function YoYMoMCompare({ stats }: YoYMoMCompareProps) {
     },
     {
       label: '腹部超声平均拍照',
-      current: stats.monthGastroscopyAvgPhotos,
+      current: stats.monthUltrasoundAvgPhotos,
       yoy: 4.1,
       mom: 2.3,
       unit: '张',
@@ -1424,20 +2237,16 @@ function TimeHeatmap() {
     '14:00', '15:00', '16:00', '17:00',
   ]
 
-  // 模拟时段数据（每小时检查量）
-  const heatmapData = useMemo(() => {
-    const base = [
-      [12, 18, 25, 22, 15, 8, 5],   // 08:00
-      [18, 28, 35, 32, 20, 12, 8],  // 09:00
-      [22, 32, 38, 35, 25, 15, 10], // 10:00
-      [15, 25, 30, 28, 18, 10, 6],  // 11:00
-      [20, 30, 36, 33, 22, 14, 9],  // 14:00
-      [25, 35, 42, 38, 28, 18, 12], // 15:00
-      [18, 28, 33, 30, 20, 12, 8],  // 16:00
-      [10, 18, 22, 20, 12, 6, 3],   // 17:00
-    ]
-    return base
-  }, [])
+  const heatmapData = useMemo(() => [
+    [12, 18, 25, 22, 15, 8, 5],
+    [18, 28, 35, 32, 20, 12, 8],
+    [22, 32, 38, 35, 25, 15, 10],
+    [15, 25, 30, 28, 18, 10, 6],
+    [20, 30, 36, 33, 22, 14, 9],
+    [25, 35, 42, 38, 28, 18, 12],
+    [18, 28, 33, 30, 20, 12, 8],
+    [10, 18, 22, 20, 12, 6, 3],
+  ], [])
 
   const getHeatColor = (value: number) => {
     if (value >= 35) return '#ef4444'
@@ -1448,8 +2257,6 @@ function TimeHeatmap() {
     return '#f1f5f9'
   }
 
-  const maxValue = 42
-
   return (
     <div style={s.heatmapContainer}>
       <div style={s.heatmapTitle}>
@@ -1457,13 +2264,11 @@ function TimeHeatmap() {
         时段热力图 · 检查量分布
       </div>
       <div style={s.heatmapGrid}>
-        {/* 表头 */}
         <div />
         {weekDays.map((day) => (
           <div key={day} style={s.heatmapHeaderCell}>{day}</div>
         ))}
 
-        {/* 数据行 */}
         {timeSlots.map((slot, rowIdx) => (
           <div key={rowIdx} style={{ display: 'contents' }}>
             <div style={s.heatmapTimeLabel}>{slot}</div>
@@ -1484,7 +2289,6 @@ function TimeHeatmap() {
         ))}
       </div>
 
-      {/* 图例 */}
       <div style={s.heatmapLegend}>
         <span style={{ fontSize: 10, color: '#64748b', marginRight: 4 }}>检查量:</span>
         {[
@@ -1518,7 +2322,6 @@ interface PredictionSectionProps {
   stats: typeof initialStatisticsData
 }
 function PredictionSection({ stats }: PredictionSectionProps) {
-  // 基于历史趋势的简单预测（线性回归模拟）
   const trendData = stats.examTrend
   const last7 = trendData.slice(-7)
   const avgGrowth = last7.reduce((sum, d, i) => {
@@ -1561,7 +2364,6 @@ function PredictionSection({ stats }: PredictionSectionProps) {
           </div>
         </div>
 
-        {/* 预测指标 */}
         <div style={s.predictMetricRow}>
           <div style={s.predictMetric}>
             <div style={s.predictMetricLabel}>预测月检查量</div>
@@ -1589,7 +2391,6 @@ function PredictionSection({ stats }: PredictionSectionProps) {
           </div>
         </div>
 
-        {/* 预测趋势图 */}
         <div style={s.predictChartArea}>
           <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
             历史趋势 + 未来7日预测
@@ -1629,14 +2430,6 @@ function PredictionSection({ stats }: PredictionSectionProps) {
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
               />
-              {/* 分隔线标记预测起始 */}
-              <Line
-                type="monotone"
-                dataKey={() => last7.length - 0.5}
-                stroke="#94a3b8"
-                strokeDasharray="4 4"
-                dot={false}
-              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -1652,7 +2445,6 @@ interface DoctorPerformanceSectionProps {
   stats: typeof initialStatisticsData
 }
 function DoctorPerformanceSection({ stats }: DoctorPerformanceSectionProps) {
-  // 基于现有数据构建医生绩效
   const doctorPerf = useMemo(() => {
     return stats.doctorWorkload.slice(0, 6).map((d, idx) => {
       const baseScore = 70 + Math.random() * 25
@@ -1670,7 +2462,7 @@ function DoctorPerformanceSection({ stats }: DoctorPerformanceSectionProps) {
         rank: idx + 1,
       }
     }).sort((a, b) => b.composite - a.composite)
-    .map((d, idx) => ({ ...d, rank: idx + 1 }))
+      .map((d, idx) => ({ ...d, rank: idx + 1 }))
   }, [stats.doctorWorkload])
 
   const rankColors = ['#f97316', '#94a3b8', '#cd7c2d', '#64748b', '#64748b', '#64748b']
@@ -1726,7 +2518,6 @@ function DoctorPerformanceSection({ stats }: DoctorPerformanceSectionProps) {
               </div>
             </div>
 
-            {/* 综合评分进度条 */}
             <div style={s.perfBar}>
               <div style={{
                 ...s.perfBarFill,
@@ -1744,7 +2535,6 @@ function DoctorPerformanceSection({ stats }: DoctorPerformanceSectionProps) {
         ))}
       </div>
 
-      {/* 医生绩效条形对比图 */}
       <div style={s.chartCard}>
         <div style={s.chartTitle}>
           <BarChart3 size={16} style={s.chartIcon} />
@@ -1798,7 +2588,7 @@ function SVGUpgradeSection({ stats }: SVGUpgradeSectionProps) {
     },
     {
       label: '腹部超声质控达标',
-      value: (stats.monthGastroscopyAvgPhotos / 22) * 100,
+      value: (stats.monthUltrasoundAvgPhotos / 22) * 100,
       max: 100,
       color: '#8b5cf6',
       unit: '%',
@@ -1821,7 +2611,6 @@ function SVGUpgradeSection({ stats }: SVGUpgradeSectionProps) {
   )
 }
 
-// SVG仪表盘子组件
 interface GaugeChartProps {
   label: string
   value: number
@@ -1831,9 +2620,8 @@ interface GaugeChartProps {
 }
 function GaugeChart({ label, value, max, color, unit }: GaugeChartProps) {
   const percentage = Math.min((value / max) * 100, 100)
-  const angle = (percentage / 100) * 180 // 半圆弧
+  const angle = (percentage / 100) * 180
 
-  // 计算圆弧路径
   const radius = 70
   const centerX = 90
   const centerY = 80
@@ -1859,14 +2647,12 @@ function GaugeChart({ label, value, max, color, unit }: GaugeChartProps) {
   const valueAngle = startAngle - angle
   const valuePath = percentage > 0 ? describeArc(startAngle, valueAngle) : ''
 
-  // 刻度线
   const ticks = [0, 25, 50, 75, 100]
 
   return (
     <div style={s.svgGaugeContainer}>
       <div style={s.svgGaugeTitle}>{label}</div>
       <svg width="180" height="110" viewBox="0 0 180 110">
-        {/* 背景弧 */}
         <path
           d={trackPath}
           fill="none"
@@ -1874,7 +2660,6 @@ function GaugeChart({ label, value, max, color, unit }: GaugeChartProps) {
           strokeWidth="12"
           strokeLinecap="round"
         />
-        {/* 数值弧 */}
         {percentage > 0 && (
           <path
             d={valuePath}
@@ -1885,7 +2670,6 @@ function GaugeChart({ label, value, max, color, unit }: GaugeChartProps) {
             style={{ transition: 'all 0.6s ease-out' }}
           />
         )}
-        {/* 中心数值 */}
         <text
           x={centerX}
           y={centerY - 5}

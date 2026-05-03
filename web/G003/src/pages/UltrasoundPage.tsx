@@ -1,7 +1,7 @@
-// @ts-nocheck
 // ============================================================
 // G003 超声RIS系统 - 超声设备管理页面
 // 增强：超声设备全生命周期（位置/状态/使用记录/维护预警）
+// 扩充：实时超声参数监控面板 + 探头信息卡片
 // ============================================================
 import { useState, useMemo } from 'react'
 import {
@@ -9,8 +9,106 @@ import {
   Activity, MapPin, Calendar, Wrench, AlertCircle, Clock,
   Package, AlertTriangle, CheckCircle, History
 } from 'lucide-react'
-import type { Endoscope, EquipmentStatus } from '../types'
+import type { UltrasoundDevice, EquipmentStatus } from '../types'
 import { initialUltrasoundDevices } from '../data/initialData'
+
+// ---------- 探头信息类型 ----------
+interface ProbeInfo {
+  probeModel: string
+  probeSerial: string
+  frequencyRange: string
+  supportedModes: string[]
+  lastUsedTime: string
+  probeStatus: '正常' | '需消毒' | '损坏'
+}
+
+// ---------- 超声实时参数类型 ----------
+interface UltrasoundParams {
+  deviceId: string
+  deviceName: string
+  depth: number
+  gain: number
+  frequency: number
+  tgc: number[]
+  probeModel: string
+  applicationPart: string
+}
+
+// ---------- 模拟超声实时参数数据 ----------
+const mockUltrasoundParams: UltrasoundParams[] = [
+  {
+    deviceId: 'US001',
+    deviceName: '飞利浦EPIQ 7C',
+    depth: 8.0,
+    gain: 72,
+    frequency: 3.5,
+    tgc: [80, 70, 60, 50, 40, 30, 20, 10],
+    probeModel: 'C5-2 convex',
+    applicationPart: '腹部',
+  },
+  {
+    deviceId: 'US002',
+    deviceName: 'GE Voluson E10',
+    depth: 12.0,
+    gain: 65,
+    frequency: 5.0,
+    tgc: [75, 68, 58, 48, 38, 28, 18, 8],
+    probeModel: 'L6-12 linear',
+    applicationPart: '浅表',
+  },
+]
+
+// ---------- 模拟探头信息数据 ----------
+const mockProbeInfos: Record<string, ProbeInfo> = {
+  'US001': {
+    probeModel: 'C5-2 convex',
+    probeSerial: 'SN-C52-20240001',
+    frequencyRange: '2-5 MHz',
+    supportedModes: ['腹部', '浅表', '心脏', '血管'],
+    lastUsedTime: '2026-05-03 14:30',
+    probeStatus: '正常',
+  },
+  'US002': {
+    probeModel: 'L6-12 linear',
+    probeSerial: 'SN-L612-20240015',
+    frequencyRange: '6-12 MHz',
+    supportedModes: ['浅表', '血管', '肌肉'],
+    lastUsedTime: '2026-05-03 10:15',
+    probeStatus: '正常',
+  },
+  'US003': {
+    probeModel: 'P4-2 phased',
+    probeSerial: 'SN-P42-20230088',
+    frequencyRange: '2-4 MHz',
+    supportedModes: ['心脏', '腹部'],
+    lastUsedTime: '2026-05-02 16:45',
+    probeStatus: '需消毒',
+  },
+  'US004': {
+    probeModel: 'E8-4 microconvex',
+    probeSerial: 'SN-E84-20240102',
+    frequencyRange: '4-8 MHz',
+    supportedModes: ['腹部', '妇产', '血管'],
+    lastUsedTime: '2026-04-28 09:00',
+    probeStatus: '正常',
+  },
+  'EN001': {
+    probeModel: 'C5-2 convex',
+    probeSerial: 'SN-C52-20230156',
+    frequencyRange: '2-5 MHz',
+    supportedModes: ['腹部', '浅表'],
+    lastUsedTime: '2026-05-01 11:20',
+    probeStatus: '正常',
+  },
+  'EN002': {
+    probeModel: 'L12-5 linear',
+    probeSerial: 'SN-L125-20220456',
+    frequencyRange: '5-12 MHz',
+    supportedModes: ['浅表', '血管'],
+    lastUsedTime: '2026-04-25 08:30',
+    probeStatus: '损坏',
+  },
+}
 
 // ---------- 使用记录类型 ----------
 interface UseRecord {
@@ -41,13 +139,20 @@ const mockUseRecords: UseRecord[] = [
   { id: 'UR008', probeId: 'US004', patientName: '陈静', patientId: 'P008', examType: '腹部超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '腹部超声室1', examDate: '2026-04-29', examTime: '08:00', endTime: '08:40', findings: '肝脾肋下未及，胆囊位于肋间，壁欠光滑，肝内外胆管轻度扩张，上段内径6mm', status: '已完成' },
 ];
 
+// ---------- 超声设备（含扩展字段） ----------
+// channelCount 是扩展字段，不在 UltrasoundDevice 类型定义中
+interface UltrasoundDeviceEx extends Omit<UltrasoundDevice, 'imageSensor'> {
+  channelCount?: number;
+  imageSensor?: string;
+}
+
 // ---------- 样式定义 ----------
 const s: Record<string, React.CSSProperties> = {
   pageHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 20,
   },
-  title: { fontSize: 18, fontWeight: 700, color: '#1a3a5c' },
+  title: { fontSize: 18, fontWeight: 700, color: '#1a365d' },
   toolbar: {
     display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
     background: '#fff', padding: '12px 16px', borderRadius: 8,
@@ -69,7 +174,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   btnPrimary: {
     display: 'flex', alignItems: 'center', gap: 6,
-    background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 6,
+    background: '#1a365d', color: '#fff', border: 'none', borderRadius: 6,
     padding: '7px 14px', fontSize: 13, cursor: 'pointer',
   },
   table: {
@@ -111,7 +216,7 @@ const s: Record<string, React.CSSProperties> = {
     background: '#fff', cursor: 'pointer', fontSize: 13, color: '#475569',
   },
   pageBtnActive: {
-    background: '#1a3a5c', color: '#fff', border: '1px solid #1a3a5c',
+    background: '#1a365d', color: '#fff', border: '1px solid #1a365d',
   },
   pageBtnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
   overlay: {
@@ -128,7 +233,7 @@ const s: Record<string, React.CSSProperties> = {
     padding: '16px 20px', borderBottom: '1px solid #e2e8f0',
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
-  modalTitle: { fontSize: 15, fontWeight: 700, color: '#1a3a5c' },
+  modalTitle: { fontSize: 15, fontWeight: 700, color: '#1a365d' },
   modalClose: {
     background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8',
     display: 'flex', alignItems: 'center', padding: 4,
@@ -156,7 +261,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   btnSubmit: {
     padding: '8px 16px', borderRadius: 6, border: 'none',
-    background: '#1a3a5c', fontSize: 13, color: '#fff', cursor: 'pointer',
+    background: '#1a365d', fontSize: 13, color: '#fff', cursor: 'pointer',
   },
   emptyState: {
     textAlign: 'center', padding: '60px 20px', color: '#94a3b8',
@@ -179,14 +284,14 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   overviewStatInfo: { flex: 1 },
-  overviewStatValue: { fontSize: 22, fontWeight: 700, color: '#1a3a5c', lineHeight: 1.2 },
+  overviewStatValue: { fontSize: 22, fontWeight: 700, color: '#1a365d', lineHeight: 1.2 },
   overviewStatLabel: { fontSize: 12, color: '#64748b', marginTop: 2 },
   overviewStatSub: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
   infoSection: {
     marginBottom: 16,
   },
   infoSectionTitle: {
-    fontSize: 13, fontWeight: 700, color: '#1a3a5c',
+    fontSize: 13, fontWeight: 700, color: '#1a365d',
     marginBottom: 10, paddingBottom: 6,
     borderBottom: '1px solid #e2e8f0',
   },
@@ -211,7 +316,7 @@ const s: Record<string, React.CSSProperties> = {
     border: '1px solid #e2e8f0',
   },
   lifecycleCardLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 4 },
-  lifecycleCardValue: { fontSize: 20, fontWeight: 700, color: '#1a3a5c' },
+  lifecycleCardValue: { fontSize: 20, fontWeight: 700, color: '#1a365d' },
   lifecycleCardSub: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
   // 预警卡片
   alertCard: {
@@ -234,7 +339,7 @@ const s: Record<string, React.CSSProperties> = {
     color: '#64748b', fontWeight: 500, background: 'none', border: 'none',
   },
   tabActive: {
-    color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', fontWeight: 600,
+    color: '#1a365d', borderBottom: '2px solid #1a365d', fontWeight: 600,
   },
   // 使用记录列表
   recordList: { display: 'flex', flexDirection: 'column', gap: 8 },
@@ -245,13 +350,13 @@ const s: Record<string, React.CSSProperties> = {
   },
   recordDate: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    minWidth: 44, background: '#1a3a5c', color: '#fff', borderRadius: 6,
+    minWidth: 44, background: '#1a365d', color: '#fff', borderRadius: 6,
     padding: '4px 8px',
   },
   recordDay: { fontSize: 16, fontWeight: 700, lineHeight: 1 },
   recordMonth: { fontSize: 10 },
   recordInfo: { flex: 1 },
-  recordPatient: { fontSize: 13, fontWeight: 600, color: '#1a3a5c' },
+  recordPatient: { fontSize: 13, fontWeight: 600, color: '#1a365d' },
   recordMeta: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
   recordFindings: { fontSize: 12, color: '#475569', marginTop: 4 },
   recordBadge: {
@@ -268,6 +373,189 @@ const s: Record<string, React.CSSProperties> = {
   },
   locationIcon: { color: '#0284c7' },
   locationText: { fontSize: 13, color: '#0369a1', flex: 1 },
+  // ---------- 超声参数监控面板 ----------
+  paramsPanel: {
+    background: '#1a365d',
+    borderRadius: 12,
+    padding: '20px 24px',
+    marginBottom: 20,
+    color: '#fff',
+  },
+  paramsPanelTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    marginBottom: 16,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  paramsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: 16,
+  },
+  paramsCard: {
+    background: 'rgba(255,255,255,0.08)',
+    borderRadius: 10,
+    padding: '16px 18px',
+    border: '1px solid rgba(255,255,255,0.12)',
+  },
+  paramsCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  paramsCardTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#e2e8f0',
+  },
+  paramsCardDevice: {
+    fontSize: 11,
+    color: '#94a3b8',
+  },
+  paramsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  paramsLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    minWidth: 70,
+  },
+  paramsValue: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#fff',
+  },
+  progressBar: {
+    width: 100,
+    height: 8,
+    background: 'rgba(255,255,255,0.15)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    background: '#60a5fa',
+    borderRadius: 4,
+    transition: 'width 0.3s ease',
+  },
+  knobDisplay: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  knobCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    border: '3px solid #60a5fa',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 10,
+    color: '#fff',
+  },
+  freqBadge: {
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: 10,
+    fontSize: 11,
+    fontWeight: 600,
+    background: '#3b82f6',
+    color: '#fff',
+  },
+  tgcContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+  },
+  tgcBar: {
+    width: 10,
+    borderRadius: 2,
+    background: '#60a5fa',
+  },
+  tgcEmpty: {
+    width: 10,
+    borderRadius: 2,
+    background: 'rgba(255,255,255,0.15)',
+  },
+  appTag: {
+    display: 'inline-block',
+    padding: '2px 10px',
+    borderRadius: 10,
+    fontSize: 11,
+    fontWeight: 600,
+    background: '#22c55e',
+    color: '#fff',
+  },
+  // ---------- 探头信息卡片 ----------
+  probeCard: {
+    background: '#f8fafc',
+    borderRadius: 10,
+    padding: '16px 18px',
+    border: '1px solid #e2e8f0',
+    marginTop: 12,
+  },
+  probeCardTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#1a365d',
+    marginBottom: 12,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  probeGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 10,
+  },
+  probeItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+  },
+  probeLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+  },
+  probeValue: {
+    fontSize: 13,
+    color: '#334155',
+    fontWeight: 500,
+  },
+  probeModes: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 2,
+  },
+  probeModeTag: {
+    display: 'inline-block',
+    padding: '1px 6px',
+    borderRadius: 8,
+    fontSize: 10,
+    fontWeight: 500,
+    background: '#e0e7ff',
+    color: '#4338ca',
+  },
+  probeStatusBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    padding: '2px 8px',
+    borderRadius: 10,
+    fontSize: 11,
+    fontWeight: 600,
+  },
+  probeStatusOk: { background: '#dcfce7', color: '#15803d' },
+  probeStatusDisinfect: { background: '#fef3c7', color: '#b45309' },
+  probeStatusBroken: { background: '#fee2e2', color: '#dc2626' },
 }
 
 // ---------- 状态徽章样式 ----------
@@ -276,8 +564,7 @@ const statusBadgeStyle = (status: EquipmentStatus): React.CSSProperties => {
   switch (status) {
     case '空闲': return { ...base, background: '#dcfce7', color: '#15803d' }
     case '使用中': return { ...base, background: '#dbeafe', color: '#1d4ed8' }
-    case '清洗中': return { ...base, background: '#fef3c7', color: '#b45309' }
-    case '消毒中': return { ...base, background: '#e0e7ff', color: '#4338ca' }
+    case '维护中': return { ...base, background: '#fef3c7', color: '#b45309' }
     case '维修中': return { ...base, background: '#fee2e2', color: '#dc2626' }
     case '已报废': return { ...base, background: '#f1f5f9', color: '#64748b' }
     default: return { ...base, background: '#f1f5f9', color: '#64748b' }
@@ -289,8 +576,7 @@ const statusLabel = (status: EquipmentStatus): string => {
   const labels: Record<EquipmentStatus, string> = {
     '空闲': '空闲',
     '使用中': '使用中',
-    '清洗中': '清洗中',
-    '消毒中': '消毒中',
+    '维护中': '维护中',
     '维修中': '维修中',
     '已报废': '已报废',
   }
@@ -298,27 +584,26 @@ const statusLabel = (status: EquipmentStatus): string => {
 }
 
 // ---------- 空超声设备对象 ----------
-const emptyEndoscope = (): Partial<Endoscope> => ({
+const emptyEndoscope = (): Partial<UltrasoundDevice> => ({
   code: '', name: '', model: '', manufacturer: '',
-  category: '超声检查',
+  category: '腹部超声',
   purchaseDate: new Date().toISOString().split('T')[0],
   warrantyEnd: '',
   status: '空闲',
   totalUseCount: 0,
   location: '',
-  channelCount: 1,
+  probeType: 'convex',
   imageSensor: 'CMOS',
 })
 
 // ---------- 校验 ----------
-const validateEndoscope = (e: Partial<Endoscope>): string[] => {
+const validateEndoscope = (e: Partial<UltrasoundDevice>): string[] => {
   const errs: string[] = []
   if (!(e.code ?? "").trim()) errs.push('设备编号不能为空')
   if (!(e.name ?? "").trim()) errs.push('设备名称不能为空')
   if (!(e.model ?? "").trim()) errs.push('型号不能为空')
   if (!(e.manufacturer ?? "").trim()) errs.push('厂商不能为空')
   if (!(e.location ?? "").trim()) errs.push('所在位置不能为空')
-  if (e.channelCount ?? 0 < 1) errs.push('管道数应≥1')
   return errs
 }
 
@@ -355,19 +640,19 @@ const getUseRecordsForEndoscope = (endoscopeId: string): UseRecord[] => {
   return mockUseRecords.filter(r => r.probeId === endoscopeId)
 }
 
-// ---------- 扩充超声设备数据（7条扩充至30条） ----------
-const generateExtraEndoscopes = (base: Endoscope[]): Endoscope[] => {
-  if (base.length >= 30) return base.slice(0, 30)
-  const extra: Endoscope[] = []
-  const names = [
-    { name: 'Fujifilm彩色多普勒超声', model: 'EL-7000', manufacturer: 'Fujifilm', category: '超声检查' },
-    { name: 'Fujifilm腹部超声', model: 'EC-7000', manufacturer: 'Fujifilm', category: '超声' },
-    { name: 'Pentax彩色多普勒超声', model: 'EG-2990i', manufacturer: 'Pentax', category: '超声检查' },
-    { name: 'Pentax腹部超声', model: 'EC-3890i', manufacturer: 'Pentax', category: '超声' },
-    { name: 'Boston超声设备', model: 'SU-9000', manufacturer: 'Boston Scientific', category: '超声设备' },
+// ---------- 扩充超声设备数据（扩充至30条） ----------
+const generateExtraEndoscopes = (base: UltrasoundDeviceEx[]): UltrasoundDeviceEx[] => {
+  if (base.length >= 30) return base
+  const extra: UltrasoundDeviceEx[] = []
+  const names: Array<{ name: string; model: string; manufacturer: string; category: UltrasoundDevice['category'] }> = [
+    { name: 'Fujifilm彩色多普勒超声', model: 'EL-7000', manufacturer: 'Fujifilm', category: '腹部超声' },
+    { name: 'Fujifilm腹部超声', model: 'EC-7000', manufacturer: 'Fujifilm', category: '腹部超声' },
+    { name: 'Pentax彩色多普勒超声', model: 'EG-2990i', manufacturer: 'Pentax', category: '心血管超声' },
+    { name: 'Pentax腹部超声', model: 'EC-3890i', manufacturer: 'Pentax', category: '腹部超声' },
+    { name: 'Boston超声设备', model: 'SU-9000', manufacturer: 'Boston Scientific', category: '其他' },
     { name: 'Cook气囊小超声', model: 'SB-900', manufacturer: 'Cook Medical', category: '其他' },
   ]
-  const statuses: EquipmentStatus[] = ['空闲', '空闲', '空闲', '使用中', '清洗中', '消毒中', '维修中', '空闲']
+  const statuses: EquipmentStatus[] = ['空闲', '空闲', '空闲', '使用中', '维护中', '维护中', '维修中', '空闲']
   const locations = ['超声设备室1', '超声设备室2', '超声设备室3', '超声设备储存室', '超声设备室1', '超声设备室2']
 
   let idx = base.length + 1
@@ -390,26 +675,42 @@ const generateExtraEndoscopes = (base: Endoscope[]): Endoscope[] => {
       lastMaintenanceDate: '2026-03-01',
       nextMaintenanceDate: '2026-06-01',
       location: locations[(idx - 1) % locations.length],
-      channelCount: ((idx - 1) % 3) + 2,
+      probeType: 'convex',
       imageSensor: (idx - 1) % 2 === 0 ? 'CMOS' : 'CCD',
+      channelCount: ((idx - 1) % 3) + 2,
     })
     idx++
   }
-  return [...base, ...extra]
+  return [...base as UltrasoundDeviceEx[], ...extra]
+}
+
+// ---------- 设备排序：空闲→使用中→维护中 ----------
+type DeviceGroup = 'idle' | 'inUse' | 'maintenance'
+const getDeviceGroup = (status: EquipmentStatus): DeviceGroup => {
+  if (status === '空闲') return 'idle'
+  if (status === '使用中') return 'inUse'
+  return 'maintenance'
+}
+
+const sortDevices = (devices: UltrasoundDeviceEx[]): UltrasoundDeviceEx[] => {
+  return [...devices].sort((a, b) => {
+    const order: Record<DeviceGroup, number> = { idle: 0, inUse: 1, maintenance: 2 }
+    return order[getDeviceGroup(a.status)] - order[getDeviceGroup(b.status)]
+  })
 }
 
 // ---------- 主组件 ----------
 export default function EndoscopePage() {
-  const baseEndoscopes = useMemo(() => initialUltrasoundDevices, [])
-  const [endoscopes, setEndoscopes] = useState<Endoscope[]>(() => generateExtraEndoscopes(baseEndoscopes))
+  const baseEndoscopes = useMemo(() => initialUltrasoundDevices as UltrasoundDeviceEx[], [])
+  const [endoscopes, setEndoscopes] = useState<UltrasoundDeviceEx[]>(() => generateExtraEndoscopes(baseEndoscopes))
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<EquipmentStatus | ''>('')
   const [page, setPage] = useState(1)
   const pageSize = 10
 
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view' | null>(null)
-  const [editingEndoscope, setEditingEndoscope] = useState<Partial<Endoscope>>({})
-  const [viewingEndoscope, setViewingEndoscope] = useState<Endoscope | null>(null)
+  const [editingEndoscope, setEditingEndoscope] = useState<Partial<UltrasoundDevice>>({})
+  const [viewingEndoscope, setViewingEndoscope] = useState<UltrasoundDeviceEx | null>(null)
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<'info' | 'records' | 'alerts'>('info')
 
@@ -428,9 +729,10 @@ export default function EndoscopePage() {
     })
   }, [endoscopes, search, statusFilter])
 
-  // 分页
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize)
+  // 排序后分页
+  const sortedFiltered = useMemo(() => sortDevices(filtered), [filtered])
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / pageSize))
+  const paged = sortedFiltered.slice((page - 1) * pageSize, page * pageSize)
 
   const openAdd = () => {
     setEditingEndoscope(emptyEndoscope())
@@ -438,13 +740,13 @@ export default function EndoscopePage() {
     setModalMode('add')
   }
 
-  const openEdit = (e: Endoscope) => {
+  const openEdit = (e: UltrasoundDeviceEx) => {
     setEditingEndoscope({ ...e })
     setFormErrors([])
     setModalMode('edit')
   }
 
-  const openView = (e: Endoscope) => {
+  const openView = (e: UltrasoundDeviceEx) => {
     setViewingEndoscope(e)
     setActiveTab('info')
     setModalMode('view')
@@ -457,16 +759,19 @@ export default function EndoscopePage() {
     if (errs.length > 0) { setFormErrors(errs); return }
     if (modalMode === 'add') {
       const id = 'EN' + String(Date.now()).slice(-6)
-      setEndoscopes(prev => [{ ...editingEndoscope, id }, ...prev])
+      setEndoscopes(prev => [{ ...editingEndoscope, id } as UltrasoundDeviceEx, ...prev])
     } else if (modalMode === 'edit') {
-      setEndoscopes(prev => prev.map(e => e.id === editingEndoscope.id ? { ...editingEndoscope, id: e.id } as Endoscope : e))
+      setEndoscopes(prev => prev.map(e => e.id === editingEndoscope.id ? { ...editingEndoscope, id: e.id } as UltrasoundDeviceEx : e))
     }
     closeModal()
   }
 
-  const handleField = (field: keyof Partial<Endoscope>, value: string | number) => {
+  const handleField = (field: keyof Partial<UltrasoundDevice>, value: string | number) => {
     setEditingEndoscope(prev => ({ ...prev, [field]: value }))
   }
+
+  // 深度进度条（0-20cm范围）
+  const depthPercent = Math.min(100, (8.0 / 20) * 100)
 
   return (
     <div>
@@ -484,7 +789,7 @@ export default function EndoscopePage() {
           <div style={s.overviewStatInfo}>
             <div style={s.overviewStatValue}>{endoscopes.length}</div>
             <div style={s.overviewStatLabel}>设备总数</div>
-            <div style={s.overviewStatSub}>超声设备 {endoscopes.filter(e => ['超声检查','超声','肺部超声','心脏超声','超声设备'].includes(e.category)).length} 台</div>
+            <div style={s.overviewStatSub}>超声设备 {endoscopes.filter(e => ['腹部超声','浅表器官超声','心血管超声','妇产科超声','介入超声','其他'].includes(e.category)).length} 台</div>
           </div>
         </div>
         <div style={s.overviewStatCard}>
@@ -502,7 +807,7 @@ export default function EndoscopePage() {
             <Wrench size={20} color="#f97316" />
           </div>
           <div style={s.overviewStatInfo}>
-            <div style={s.overviewStatValue}>{endoscopes.filter(e => ['清洗中','消毒中'].includes(e.status)).length}</div>
+            <div style={s.overviewStatValue}>{endoscopes.filter(e => e.status === '维护中').length}</div>
             <div style={s.overviewStatLabel}>维护保养中</div>
             <div style={s.overviewStatSub}>正在处理中</div>
           </div>
@@ -516,6 +821,75 @@ export default function EndoscopePage() {
             <div style={s.overviewStatLabel}>维修/报废</div>
             <div style={s.overviewStatSub}>需关注设备</div>
           </div>
+        </div>
+      </div>
+
+      {/* 实时超声参数监控面板 */}
+      <div style={s.paramsPanel}>
+        <div style={s.paramsPanelTitle}>
+          <Activity size={18} color="#60a5fa" />
+          实时超声参数监控
+        </div>
+        <div style={s.paramsGrid}>
+          {mockUltrasoundParams.map(params => (
+            <div key={params.deviceId} style={s.paramsCard}>
+              <div style={s.paramsCardHeader}>
+                <div>
+                  <div style={s.paramsCardTitle}>{params.deviceName}</div>
+                  <div style={s.paramsCardDevice}>设备ID: {params.deviceId}</div>
+                </div>
+                <span style={s.appTag}>{params.applicationPart}</span>
+              </div>
+
+              {/* 深度 */}
+              <div style={s.paramsRow}>
+                <span style={s.paramsLabel}>深度 depth</span>
+                <span style={s.paramsValue}>{params.depth} cm</span>
+                <div style={s.progressBar}>
+                  <div style={{ ...s.progressFill, width: `${depthPercent}%` }} />
+                </div>
+              </div>
+
+              {/* 增益 */}
+              <div style={s.paramsRow}>
+                <span style={s.paramsLabel}>增益 gain</span>
+                <span style={s.paramsValue}>{params.gain} dB</span>
+                <div style={s.knobDisplay}>
+                  <div style={s.knobCircle}>◐</div>
+                  <span style={{ fontSize: 10, color: '#94a3b8' }}>旋钮</span>
+                </div>
+              </div>
+
+              {/* 频率 */}
+              <div style={s.paramsRow}>
+                <span style={s.paramsLabel}>频率 frequency</span>
+                <span style={s.paramsValue}>{params.frequency} MHz</span>
+                <span style={s.freqBadge}>{params.frequency} MHz</span>
+              </div>
+
+              {/* TGC */}
+              <div style={s.paramsRow}>
+                <span style={s.paramsLabel}>TGC</span>
+                <div style={s.tgcContainer}>
+                  {params.tgc.map((val, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        ...(val > 0 ? s.tgcBar : s.tgcEmpty),
+                        height: Math.max(6, (val / 100) * 28),
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 探头型号 */}
+              <div style={s.paramsRow}>
+                <span style={s.paramsLabel}>探头型号</span>
+                <span style={{ ...s.paramsValue, fontSize: 13 }}>{params.probeModel}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -538,8 +912,7 @@ export default function EndoscopePage() {
           <option value="">全部状态</option>
           <option value="空闲">空闲</option>
           <option value="使用中">使用中</option>
-          <option value="清洗中">清洗中</option>
-          <option value="消毒中">消毒中</option>
+          <option value="维护中">维护中</option>
           <option value="维修中">维修中</option>
           <option value="已报废">已报废</option>
         </select>
@@ -580,7 +953,7 @@ export default function EndoscopePage() {
             {paged.map(e => (
               <tr key={e.id} style={{ background: '#fff' }}>
                 <td style={s.td}>
-                  <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{e.name ?? ""}</div>
+                  <div style={{ fontWeight: 600, color: '#1a365d' }}>{e.name ?? ""}</div>
                   <div style={{ fontSize: 11, color: '#94a3b8' }}>{e.id}</div>
                 </td>
                 <td style={s.td}>
@@ -605,7 +978,7 @@ export default function EndoscopePage() {
                   </div>
                 </td>
                 <td style={s.td}>
-                  <span style={{ fontWeight: 600, color: '#1a3a5c' }}>{e.totalUseCount}</span>
+                  <span style={{ fontWeight: 600, color: '#1a365d' }}>{e.totalUseCount}</span>
                   <span style={{ color: '#94a3b8', fontSize: 11 }}> 次</span>
                 </td>
                 <td style={s.td}>
@@ -622,7 +995,7 @@ export default function EndoscopePage() {
                         {ms === 'overdue' && <AlertTriangle size={11} color="#dc2626" />}
                         {ms === 'warning' && <AlertCircle size={11} color="#b45309" />}
                         {ws === 'overdue' && <AlertTriangle size={11} color="#dc2626" />}
-                        {ws === 'warning' && ws !== 'overdue' && <AlertCircle size={11} color="#b45309" />}
+                        {ws === 'warning' && <AlertCircle size={11} color="#b45309" />}
                       </div>
                     )
                   })() : (
@@ -690,7 +1063,7 @@ export default function EndoscopePage() {
           <div style={s.modal}>
             {/* 详情弹窗 - 全生命周期视图 */}
             {modalMode === 'view' && viewingEndoscope && (() => {
-              const e = viewingUltrasoundDevice
+              const e = viewingEndoscope
               const days = getDaysInService(e.purchaseDate)
               const maintStatus = getMaintenanceStatus(e.nextMaintenanceDate)
               const warrantySt = getWarrantyStatus(e.warrantyEnd)
@@ -702,6 +1075,8 @@ export default function EndoscopePage() {
                 cutoff.setDate(cutoff.getDate() - 30)
                 return d >= cutoff
               }).length
+
+              const probeInfo = mockProbeInfos[e.id]
 
               return (
               <>
@@ -789,8 +1164,8 @@ export default function EndoscopePage() {
                             <span style={s.infoValue}>{e.category}</span>
                           </div>
                           <div style={s.infoItem}>
-                            <span style={s.infoLabel}>管道数</span>
-                            <span style={s.infoValue}>{e.channelCount ?? 0}</span>
+                            <span style={s.infoLabel}>探头类型</span>
+                            <span style={s.infoValue}>{e.probeType}</span>
                           </div>
                           <div style={s.infoItem}>
                             <span style={s.infoLabel}>图像传感器</span>
@@ -827,6 +1202,58 @@ export default function EndoscopePage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* 探头信息卡片 */}
+                      {probeInfo && (
+                        <div style={s.infoSection}>
+                          <div style={s.probeCardTitle}>
+                            <Package size={15} color="#1a365d" />
+                            探头信息
+                          </div>
+                          <div style={s.probeCard}>
+                            <div style={s.probeGrid}>
+                              <div style={s.probeItem}>
+                                <span style={s.probeLabel}>探头型号</span>
+                                <span style={s.probeValue}>{probeInfo.probeModel}</span>
+                              </div>
+                              <div style={s.probeItem}>
+                                <span style={s.probeLabel}>序列号</span>
+                                <span style={s.probeValue}>{probeInfo.probeSerial}</span>
+                              </div>
+                              <div style={s.probeItem}>
+                                <span style={s.probeLabel}>频率范围</span>
+                                <span style={s.probeValue}>{probeInfo.frequencyRange}</span>
+                              </div>
+                              <div style={s.probeItem}>
+                                <span style={s.probeLabel}>最近使用</span>
+                                <span style={s.probeValue}>{probeInfo.lastUsedTime}</span>
+                              </div>
+                              <div style={s.probeItem}>
+                                <span style={s.probeLabel}>探头状态</span>
+                                <span style={{
+                                  ...s.probeStatusBadge,
+                                  ...(probeInfo.probeStatus === '正常' ? s.probeStatusOk :
+                                      probeInfo.probeStatus === '需消毒' ? s.probeStatusDisinfect :
+                                      s.probeStatusBroken)
+                                }}>
+                                  {probeInfo.probeStatus === '正常' ? <CheckCircle size={10} /> :
+                                   probeInfo.probeStatus === '需消毒' ? <AlertCircle size={10} /> :
+                                   <AlertTriangle size={10} />}
+                                  {probeInfo.probeStatus}
+                                </span>
+                              </div>
+                              <div style={{ ...s.probeItem, gridColumn: '1 / -1' }}>
+                                <span style={s.probeLabel}>支持扫查模式</span>
+                                <div style={s.probeModes}>
+                                  {probeInfo.supportedModes.map(mode => (
+                                    <span key={mode} style={s.probeModeTag}>{mode}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -1027,13 +1454,13 @@ export default function EndoscopePage() {
                       <select
                         style={s.input}
                         value={editingEndoscope.category}
-                        onChange={e => handleField('category', e.target.value)}
+                        onChange={e => handleField('category', e.target.value as UltrasoundDevice['category'])}
                       >
-                        <option value="超声检查">超声检查</option>
-                        <option value="超声">超声</option>
-                        <option value="肺部超声">肺部超声</option>
-                        <option value="心脏超声">心脏超声</option>
-                        <option value="超声设备">超声设备</option>
+                        <option value="腹部超声">腹部超声</option>
+                        <option value="浅表器官超声">浅表器官超声</option>
+                        <option value="心血管超声">心血管超声</option>
+                        <option value="妇产科超声">妇产科超声</option>
+                        <option value="介入超声">介入超声</option>
                         <option value="其他">其他</option>
                       </select>
                     </div>
@@ -1043,12 +1470,11 @@ export default function EndoscopePage() {
                       <select
                         style={s.input}
                         value={editingEndoscope.status}
-                        onChange={e => handleField('status', e.target.value)}
+                        onChange={e => handleField('status', e.target.value as EquipmentStatus)}
                       >
                         <option value="空闲">空闲</option>
                         <option value="使用中">使用中</option>
-                        <option value="清洗中">清洗中</option>
-                        <option value="消毒中">消毒中</option>
+                        <option value="维护中">维护中</option>
                         <option value="维修中">维修中</option>
                         <option value="已报废">已报废</option>
                       </select>
@@ -1063,15 +1489,14 @@ export default function EndoscopePage() {
                         placeholder="如：超声设备室1"
                       />
                     </div>
-                    {/* 管道数 */}
+                    {/* 探头类型 */}
                     <div style={s.formGroup}>
-                      <label style={s.label}>管道数</label>
+                      <label style={s.label}>探头类型</label>
                       <input
                         style={s.input}
-                        type="number"
-                        min={1}
-                        value={editingEndoscope.channelCount ?? 0}
-                        onChange={e => handleField('channelCount', parseInt(e.target.value) || 1)}
+                        value={editingEndoscope.probeType ?? ""}
+                        onChange={e => handleField('probeType', e.target.value)}
+                        placeholder="如：convex"
                       />
                     </div>
                     {/* 图像传感器 */}
@@ -1093,7 +1518,7 @@ export default function EndoscopePage() {
                         style={s.input}
                         type="number"
                         min={0}
-                        value={editingEndoscope.totalUseCount}
+                        value={editingEndoscope.totalUseCount ?? 0}
                         onChange={e => handleField('totalUseCount', parseInt(e.target.value) || 0)}
                       />
                     </div>
@@ -1103,7 +1528,7 @@ export default function EndoscopePage() {
                       <input
                         style={s.input}
                         type="date"
-                        value={editingEndoscope.purchaseDate}
+                        value={editingEndoscope.purchaseDate ?? ""}
                         onChange={e => handleField('purchaseDate', e.target.value)}
                       />
                     </div>
@@ -1113,7 +1538,7 @@ export default function EndoscopePage() {
                       <input
                         style={s.input}
                         type="date"
-                        value={editingEndoscope.warrantyEnd}
+                        value={editingEndoscope.warrantyEnd ?? ""}
                         onChange={e => handleField('warrantyEnd', e.target.value)}
                       />
                     </div>

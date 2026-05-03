@@ -3,17 +3,19 @@ import {
   AlertTriangle, CheckCircle, Clock, Phone, Eye, FileText, User,
   Plus, Filter, X, ChevronDown, ChevronUp, Zap, ShieldAlert,
   Activity, Bell, ArrowRight, LogOut, Timer, TrendingUp, Database,
-  MessageSquare, Heart, ArrowUpCircle, Calendar, Users, XCircle
+  MessageSquare, Heart, ArrowUpCircle, Calendar, Users, XCircle,
+  Check, Star, ArrowUpRight
 } from 'lucide-react';
-import type { CriticalValue, CriticalLevel, CriticalStage, CriticalValueLog, EscalationRule, PatientOutcome } from '../types';
+import type { CriticalValue, CriticalLevel, CriticalStage, CriticalValueLog, FollowUp, PatientOutcome } from '../types';
 import {
   initialCriticalValues, initialEscalationRules, initialUsers
 } from '../data/initialData';
 
 // ============== 样式 ==============
+const MAIN_COLOR = '#1a365d';
 const s = {
   root: { minHeight: '100vh', background: '#f7f9fc', fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif' },
-  header: { background: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)', color: '#fff', padding: '24px 32px' },
+  header: { background: `linear-gradient(135deg, ${MAIN_COLOR} 0%, #0d2137 100%)`, color: '#fff', padding: '24px 32px' },
   headerTitle: { fontSize: 22, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 10 },
   headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
   container: { maxWidth: 1400, margin: '0 auto', padding: '24px 32px' },
@@ -26,14 +28,14 @@ const s = {
   },
   statIconWrap: { width: 48, height: 48, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   statInfo: { flex: 1, minWidth: 0 },
-  statValue: { fontSize: 26, fontWeight: 700, color: '#1a3a5c', lineHeight: 1.2 },
+  statValue: { fontSize: 26, fontWeight: 700, color: MAIN_COLOR, lineHeight: 1.2 },
   statLabel: { fontSize: 12, color: '#8898aa', marginTop: 2 },
   // 标签筛选
   filterRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' as const },
   filterTabs: { display: 'flex', background: '#fff', borderRadius: 10, padding: 4, gap: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #eef2f7' },
   filterTab: (active: boolean) => ({
     padding: '6px 14px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-    background: active ? 'linear-gradient(135deg, #1e40af, #1e3a8a)' : 'transparent',
+    background: active ? `linear-gradient(135deg, ${MAIN_COLOR}, #1e3a8a)` : 'transparent',
     color: active ? '#fff' : '#64748b', transition: 'all 0.2s',
   }),
   levelFilter: { display: 'flex', gap: 8 },
@@ -54,7 +56,7 @@ const s = {
   cardPatient: { display: 'flex', alignItems: 'center', gap: 12 },
   patientAvatar: { width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 },
   patientInfo: {},
-  patientName: { fontSize: 15, fontWeight: 600, color: '#1a3a5c' },
+  patientName: { fontSize: 15, fontWeight: 600, color: MAIN_COLOR },
   patientMeta: { fontSize: 12, color: '#8898aa', marginTop: 1 },
   cardTags: { display: 'flex', gap: 6, flexWrap: 'wrap' as const },
   tag: (bg: string, color: string) => ({ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: bg, color }),
@@ -90,7 +92,7 @@ const s = {
     transition: 'all 0.3s',
   }),
   stepLabel: (done: boolean, active: boolean) => ({
-    fontSize: 11, fontWeight: done || active ? 600 : 400, color: done || active ? '#1a3a5c' : '#94a3b8', textAlign: 'center' as const,
+    fontSize: 11, fontWeight: done || active ? 600 : 400, color: done || active ? MAIN_COLOR : '#94a3b8', textAlign: 'center' as const,
   }),
   stepTime: (done: boolean) => ({ fontSize: 10, color: '#94a3b8', textAlign: 'center' as const }),
   // 5阶段颜色
@@ -116,7 +118,7 @@ const s = {
     padding: '20px 24px', borderBottom: '1px solid #eef2f7', display: 'flex',
     alignItems: 'center', justifyContent: 'space-between',
   },
-  modalTitle: { fontSize: 17, fontWeight: 700, color: '#1a3a5c' },
+  modalTitle: { fontSize: 17, fontWeight: 700, color: MAIN_COLOR },
   modalBody: { padding: '24px' },
   modalFooter: { padding: '16px 24px', borderTop: '1px solid #eef2f7', display: 'flex', justifyContent: 'flex-end', gap: 10 },
   closeBtn: {
@@ -130,18 +132,19 @@ const s = {
   formLabel: { fontSize: 12, fontWeight: 600, color: '#374151' },
   formInput: {
     padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13,
-    color: '#1a3a5c', background: '#fafbfc', outline: 'none', transition: 'border 0.2s',
+    color: MAIN_COLOR, background: '#fafbfc', outline: 'none', transition: 'border 0.2s',
   },
   formSelect: {
     padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13,
-    color: '#1a3a5c', background: '#fafbfc', outline: 'none',
+    color: MAIN_COLOR, background: '#fafbfc', outline: 'none',
   },
   formTextarea: {
     padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13,
-    color: '#1a3a5c', background: '#fafbfc', outline: 'none', resize: 'vertical' as const, minHeight: 80,
+    color: MAIN_COLOR, background: '#fafbfc', outline: 'none', resize: 'vertical' as const, minHeight: 80,
   },
   primaryBtn: {
-    padding: '8px 20px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #1e40af, #1e3a8a)',
+    padding: '8px 20px', borderRadius: 8, border: 'none',
+    background: `linear-gradient(135deg, ${MAIN_COLOR}, #1e3a8a)`,
     color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   },
   cancelBtn: {
@@ -156,11 +159,11 @@ const s = {
   red: { backgroundColor: '#fef2f2', color: '#dc2626' },
   // 日志面板
   logPanel: { background: '#fafbfd', borderRadius: 10, padding: 16, marginTop: 16 },
-  logTitle: { fontSize: 13, fontWeight: 700, color: '#1a3a5c', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 },
+  logTitle: { fontSize: 13, fontWeight: 700, color: MAIN_COLOR, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 },
   logItem: { display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'flex-start' },
   logDot: (color: string) => ({ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 4 }),
   logContent: { flex: 1 },
-  logAction: { fontSize: 13, fontWeight: 600, color: '#1a3a5c' },
+  logAction: { fontSize: 13, fontWeight: 600, color: MAIN_COLOR },
   logMeta: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
   logConnector: { width: 1, background: '#e2e8f0', margin: '0 4px', alignSelf: 'stretch' },
   // 升级提示
@@ -170,6 +173,59 @@ const s = {
   }),
   empty: { textAlign: 'center' as const, padding: '60px 0', color: '#94a3b8' },
   blue2: '#1e40af',
+  // 转随访相关
+  followUpBadge: {
+    display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px',
+    borderRadius: 6, fontSize: 11, fontWeight: 600, background: '#f0fdf4', color: '#15803d',
+    border: '1px solid #bbf7d0',
+  },
+  transferBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px',
+    borderRadius: 7, border: 'none', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+    background: '#f5f3ff', color: '#7c3aed', transition: 'all 0.2s',
+  },
+  // 闭环追踪时间轴
+  closedLoopTimeline: {
+    display: 'flex', alignItems: 'stretch', gap: 0, padding: '14px 20px',
+    background: '#fafbfd', borderTop: '1px solid #eef2f7', overflowX: 'auto' as const,
+  },
+  timelineNode: (done: boolean, active: boolean, color: string) => ({
+    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+    gap: 4, flex: 1, minWidth: 90, position: 'relative' as const,
+  }),
+  timelineDot: (done: boolean, active: boolean, color: string) => ({
+    width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', background: done ? color : active ? color : '#e2e8f0',
+    color: done || active ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 700,
+    border: done || active ? 'none' : '2px solid #cbd5e1', zIndex: 1,
+    boxShadow: active ? `0 0 0 4px ${color}33` : 'none', transition: 'all 0.3s',
+  }),
+  timelineLabel: (done: boolean, active: boolean) => ({
+    fontSize: 11, fontWeight: done || active ? 600 : 400,
+    color: done || active ? MAIN_COLOR : '#94a3b8', textAlign: 'center' as const,
+  }),
+  timelineMeta: (done: boolean) => ({
+    fontSize: 10, color: '#94a3b8', textAlign: 'center' as const,
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, maxWidth: 80,
+  }),
+  timelineConnector: (done: boolean, color: string) => ({
+    flex: '0 0 20px', height: 2, background: done ? color : '#e2e8f0',
+    alignSelf: 'center', marginTop: -16, transition: 'background 0.3s',
+  }),
+  // 转随访弹窗
+  transferModalContent: {
+    background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480,
+    overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+  },
+  transferInfo: {
+    background: '#f8fafc', borderRadius: 10, padding: '14px 16px', marginBottom: 16,
+    border: '1px solid #eef2f7',
+  },
+  transferInfoRow: { display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12 },
+  transferInfoLabel: { color: '#64748b' },
+  transferInfoValue: { color: MAIN_COLOR, fontWeight: 600 },
+  dateInputGroup: { display: 'flex', flexDirection: 'column' as const, gap: 6 },
+  transferModalFooter: { padding: '16px 20px', borderTop: '1px solid #eef2f7', display: 'flex', justifyContent: 'flex-end', gap: 10 },
 }
 
 // 动态导入 Archive 图标 (lucide-react 没有 Archive，用 Database 代替)
@@ -224,7 +280,7 @@ function getElapsedMinutes(detectedTime: string): number {
   return Math.floor((Date.now() - detected) / 60000);
 }
 
-function getOutcomeLabel(outcome: PatientOutcome): string {
+function getOutcomeLabel(outcome: string): string {
   const map: Record<string, string> = {
     '继续观察': '继续观察', '住院治疗': '住院治疗', '手术': '手术',
     '转院': '转院', '死亡': '死亡', '失访': '失访', '': '未记录',
@@ -232,12 +288,194 @@ function getOutcomeLabel(outcome: PatientOutcome): string {
   return map[outcome] || outcome || '未记录';
 }
 
-function getOutcomeColor(outcome: PatientOutcome): string {
+function getOutcomeColor(outcome: string): string {
   const map: Record<string, string> = {
     '继续观察': '#3b82f6', '住院治疗': '#f59e0b', '手术': '#8b5cf6',
     '转院': '#06b6d4', '死亡': '#ef4444', '失访': '#94a3b8', '': '#94a3b8',
   };
   return map[outcome] || '#94a3b8';
+}
+
+function addDays(date: Date, days: number): string {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result.toISOString().slice(0, 10);
+}
+
+// ============== 闭环追踪时间轴组件 ==============
+interface ClosedLoopTimelineProps {
+  cv: CriticalValue;
+}
+
+function ClosedLoopTimeline({ cv }: ClosedLoopTimelineProps) {
+  // 闭环5节点：发现 -> 通报临床 -> 处理中 -> 已处理 -> 已归档
+  const nodes = [
+    {
+      key: 'detected',
+      emoji: '🔴',
+      label: '发现',
+      getTime: () => formatTime(cv.detectedTime),
+      getMeta: () => cv.detectedDoctorName || '—',
+      done: true,
+      active: cv.stage === 'detected',
+      color: '#dc2626',
+    },
+    {
+      key: 'notified',
+      emoji: '🟠',
+      label: '通报临床',
+      getTime: () => cv.notifiedTime ? formatTime(cv.notifiedTime) : '—',
+      getMeta: () => cv.notifiedDoctorName || (cv.autoEscalation ? '系统自动通报' : '—'),
+      done: getStageIndex(cv.stage) >= getStageIndex('notified'),
+      active: cv.stage === 'notified',
+      color: '#ea580c',
+    },
+    {
+      key: 'handling',
+      emoji: '🟡',
+      label: '处理中',
+      getTime: () => cv.handledTime && cv.stage !== 'handled' ? formatTime(cv.handledTime) : '—',
+      getMeta: () => {
+        if (cv.patientOutcome) return getOutcomeLabel(cv.patientOutcome);
+        if (cv.notes) return cv.notes.slice(0, 12) + (cv.notes.length > 12 ? '…' : '');
+        return '处理措施待记录';
+      },
+      done: getStageIndex(cv.stage) >= getStageIndex('handled'),
+      active: cv.stage === 'notified' && !cv.handled,
+      color: '#d97706',
+    },
+    {
+      key: 'handled',
+      emoji: '🟢',
+      label: '已处理',
+      getTime: () => cv.handledTime ? formatTime(cv.handledTime) : '—',
+      getMeta: () => cv.patientOutcome ? getOutcomeLabel(cv.patientOutcome) : (cv.handled ? '处理完成' : '—'),
+      done: cv.handled || cv.stage === 'archived',
+      active: cv.stage === 'handled',
+      color: '#16a34a',
+    },
+    {
+      key: 'archived',
+      emoji: '🔵',
+      label: '已归档',
+      getTime: () => cv.archivalTime ? formatTime(cv.archivalTime) : '—',
+      getMeta: () => cv.convertedToFollowUp ? '已转随访' : (cv.stage === 'archived' ? '已归档' : '待归档'),
+      done: cv.stage === 'archived',
+      active: cv.stage === 'archived',
+      color: '#2563eb',
+    },
+  ];
+
+  return (
+    <div style={s.closedLoopTimeline}>
+      {nodes.map((node, idx) => (
+        <React.Fragment key={node.key}>
+          <div style={s.timelineNode(node.done, node.active, node.color)}>
+            <div style={s.timelineDot(node.done, node.active, node.color)}>
+              {node.done ? '✓' : idx + 1}
+            </div>
+            <div style={s.timelineLabel(node.done, node.active)}>{node.label}</div>
+            <div style={s.timelineMeta(node.done)} title={node.getMeta()}>
+              {node.getTime()}
+            </div>
+            <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {node.getMeta()}
+            </div>
+          </div>
+          {idx < nodes.length - 1 && (
+            <div style={s.timelineConnector(nodes[idx + 1].done, nodes[idx + 1].color)} />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ============== 转随访确认弹窗 ==============
+interface TransferFollowUpModalProps {
+  cv: CriticalValue;
+  onConfirm: (scheduledDate: string) => void;
+  onClose: () => void;
+}
+
+function TransferFollowUpModal({ cv, onConfirm, onClose }: TransferFollowUpModalProps) {
+  const defaultDate = addDays(new Date(), 30);
+
+  return (
+    <div style={s.modal} onClick={onClose}>
+      <div style={s.transferModalContent} onClick={e => e.stopPropagation()}>
+        <div style={s.modalHeader}>
+          <div style={s.modalTitle}>转随访确认</div>
+          <button style={s.closeBtn} onClick={onClose}><X size={16} /></button>
+        </div>
+        <div style={s.modalBody}>
+          {/* 危急值摘要 */}
+          <div style={s.transferInfo}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Star size={16} color="#7c3aed" />
+              <span style={{ fontSize: 13, fontWeight: 700, color: MAIN_COLOR }}>危急值摘要</span>
+            </div>
+            <div style={s.transferInfoRow}>
+              <span style={s.transferInfoLabel}>患者姓名</span>
+              <span style={s.transferInfoValue}>{cv.patientName}</span>
+            </div>
+            <div style={s.transferInfoRow}>
+              <span style={s.transferInfoLabel}>危急值内容</span>
+              <span style={{ ...s.transferInfoValue, fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {cv.criticalValueContent}
+              </span>
+            </div>
+            <div style={s.transferInfoRow}>
+              <span style={s.transferInfoLabel}>危急等级</span>
+              <span style={s.transferInfoValue}>{LEVEL_COLORS[cv.level].label}</span>
+            </div>
+            <div style={s.transferInfoRow}>
+              <span style={s.transferInfoLabel}>发现时间</span>
+              <span style={s.transferInfoValue}>{formatTime(cv.detectedTime)}</span>
+            </div>
+            <div style={s.transferInfoRow}>
+              <span style={s.transferInfoLabel}>当前状态</span>
+              <span style={s.transferInfoValue}>{STAGE_LABELS[getStageIndex(cv.stage)]}</span>
+            </div>
+          </div>
+
+          {/* 随访信息 */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <CheckCircle size={16} color="#16a34a" />
+              <span style={{ fontSize: 13, fontWeight: 700, color: MAIN_COLOR }}>随访计划</span>
+            </div>
+            <div style={s.dateInputGroup}>
+              <label style={s.formLabel}>计划随访日期（默认30天后）</label>
+              <input
+                type="date"
+                defaultValue={defaultDate}
+                min={addDays(new Date(), 1)}
+                style={s.formInput}
+                onChange={e => {}}
+              />
+            </div>
+            <div style={{ marginTop: 10, padding: '10px 12px', background: '#f5f3ff', borderRadius: 8, fontSize: 12, color: '#7c3aed' }}>
+              <strong>随访类型：</strong>复查提醒 &nbsp;|&nbsp; <strong>随访周期：</strong>30天<br />
+              <strong>备注：</strong>危急值转随访跟踪，监测病情变化
+            </div>
+          </div>
+        </div>
+        <div style={s.transferModalFooter}>
+          <button style={s.cancelBtn} onClick={onClose}>取消</button>
+          <button
+            style={{ ...s.primaryBtn, background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}
+            onClick={() => {
+              const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+              onConfirm(dateInput?.value || defaultDate);
+            }}
+          >
+            <Check size={14} /> 确认转随访
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ============== 生命周期进度条组件 ==============
@@ -294,15 +532,18 @@ function LifecycleBar({ cv }: { cv: CriticalValue }) {
 }
 
 // ============== 危急值卡片 ==============
-function CriticalValueCard({
-  cv, onView, onAdvance, onMarkHandled, onEscalate,
-}: {
+interface CriticalValueCardProps {
   cv: CriticalValue;
   onView: () => void;
   onAdvance: () => void;
   onMarkHandled: () => void;
   onEscalate: () => void;
-}) {
+  onTransferFollowUp: () => void;
+}
+
+function CriticalValueCard({
+  cv, onView, onAdvance, onMarkHandled, onEscalate, onTransferFollowUp,
+}: CriticalValueCardProps) {
   const [expanded, setExpanded] = useState(false);
   const lc = LEVEL_COLORS[cv.level];
   const timeoutStatus = getTimeoutStatus(cv);
@@ -340,7 +581,10 @@ function CriticalValueCard({
             {cv.patientName.charAt(0)}
           </div>
           <div style={s.patientInfo}>
-            <div style={s.patientName}>{cv.patientName} <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400 }}>#{cv.id}</span></div>
+            <div style={s.patientName}>
+              {cv.patientName}
+              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400 }}> #{cv.id}</span>
+            </div>
             <div style={s.patientMeta}>{cv.examItemName}</div>
           </div>
         </div>
@@ -366,11 +610,20 @@ function CriticalValueCard({
               <Zap size={11} /> 超时{elapsed - threshold}min
             </span>
           )}
+          {/* 已转随访徽章 */}
+          {cv.convertedToFollowUp && (
+            <span style={s.followUpBadge}>
+              <CheckCircle size={11} /> 已转随访✓
+            </span>
+          )}
         </div>
       </div>
 
       {/* 生命周期进度条 */}
       <LifecycleBar cv={cv} />
+
+      {/* 闭环追踪时间轴 */}
+      <ClosedLoopTimeline cv={cv} />
 
       {/* 自动升级提示 */}
       {cv.autoEscalation && (
@@ -416,6 +669,11 @@ function CriticalValueCard({
       <div style={s.cardFooter}>
         <div style={s.footerLeft}>
           {cv.notes && <span style={{ fontStyle: 'italic' }}>备注：{cv.notes}</span>}
+          {cv.convertedToFollowUp && cv.scheduledFollowUpDate && (
+            <span style={{ marginLeft: 12, fontSize: 11, color: '#7c3aed' }}>
+              随访计划：{cv.scheduledFollowUpDate}
+            </span>
+          )}
         </div>
         <div style={s.footerRight}>
           <button style={{ ...s.actionBtn, background: '#f8fafc', color: '#64748b' }} onClick={() => setExpanded(!expanded)}>
@@ -424,6 +682,12 @@ function CriticalValueCard({
           <button style={{ ...s.actionBtn, background: '#f8fafc', color: '#64748b' }} onClick={onView}>
             <Eye size={13} /> 详情
           </button>
+          {/* 转随访按钮 */}
+          {!cv.convertedToFollowUp && (
+            <button style={s.transferBtn} onClick={onTransferFollowUp}>
+              <ArrowUpRight size={13} /> 转随访
+            </button>
+          )}
           {!cv.handled && cv.stage !== 'archived' && (
             <>
               {!cv.autoEscalation && cv.stage !== 'notified' && (
@@ -445,7 +709,7 @@ function CriticalValueCard({
 }
 
 // ============== 新增/推进模态框 ==============
-interface ModalProps {
+interface CVModalProps {
   cv?: CriticalValue;
   advanceFrom?: CriticalValue;
   onSave: (data: Partial<CriticalValue> & { advanceTo?: CriticalStage }) => void;
@@ -453,7 +717,7 @@ interface ModalProps {
   mode: 'add' | 'advance' | 'view' | 'escalate';
 }
 
-function CVModal({ cv, advanceFrom, onSave, onClose, mode }: ModalProps) {
+function CVModal({ cv, advanceFrom, onSave, onClose, mode }: CVModalProps) {
   const [form, setForm] = useState<Record<string, string>>(() => {
     if (cv) {
       return {
@@ -478,17 +742,17 @@ function CVModal({ cv, advanceFrom, onSave, onClose, mode }: ModalProps) {
 
   const handleSubmit = () => {
     if (mode === 'add') {
-      onSave({ level: form.level as CriticalLevel, stage: form.stage as CriticalStage, criticalValueType: form.criticalValueType, criticalValueContent: form.criticalValueContent, reportMethod: form.reportMethod as '电话', patientResponse: form.patientResponse, notes: form.notes } as any);
+      onSave({ level: form.level as CriticalLevel, stage: form.stage as CriticalStage, criticalValueType: form.criticalValueType, criticalValueContent: form.criticalValueContent, reportMethod: form.reportMethod as '电话', patientResponse: form.patientResponse, notes: form.notes } as Partial<CriticalValue> & { advanceTo?: CriticalStage });
     } else if (mode === 'advance') {
-      onSave({ advanceTo: form.stage as CriticalStage, reportMethod: form.reportMethod as '电话', patientResponse: form.patientResponse, notes: form.notes, patientOutcome: form.patientOutcome } as any);
+      onSave({ advanceTo: form.stage as CriticalStage, reportMethod: form.reportMethod as '电话', patientResponse: form.patientResponse, notes: form.notes, patientOutcome: form.patientOutcome } as Partial<CriticalValue> & { advanceTo?: CriticalStage });
     } else if (mode === 'escalate') {
-      onSave({ escalationMessage: form.notes } as any);
+      onSave({ escalationMessage: form.notes } as Partial<CriticalValue>);
     } else {
       onClose();
     }
   };
 
-  const titleMap = { add: '登记危急值', advance: '推进生命周期', view: '危急值详情', escalate: '手动升级' };
+  const titleMap: Record<string, string> = { add: '登记危急值', advance: '推进生命周期', view: '危急值详情', escalate: '手动升级' };
   const isView = mode === 'view';
 
   return (
@@ -577,10 +841,10 @@ function CVModal({ cv, advanceFrom, onSave, onClose, mode }: ModalProps) {
           {isView && cv && (
             <div>
               <div style={s.formGrid}>
-                <div style={s.formGroup}><label style={s.formLabel}>患者姓名</label><div style={{ padding: '8px 0', color: '#1a3a5c', fontWeight: 600 }}>{cv.patientName}</div></div>
-                <div style={s.formGroup}><label style={s.formLabel}>检查项目</label><div style={{ padding: '8px 0', color: '#1a3a5c' }}>{cv.examItemName}</div></div>
+                <div style={s.formGroup}><label style={s.formLabel}>患者姓名</label><div style={{ padding: '8px 0', color: MAIN_COLOR, fontWeight: 600 }}>{cv.patientName}</div></div>
+                <div style={s.formGroup}><label style={s.formLabel}>检查项目</label><div style={{ padding: '8px 0', color: MAIN_COLOR }}>{cv.examItemName}</div></div>
                 <div style={s.formGroup}><label style={s.formLabel}>危急等级</label><div style={{ padding: '8px 0' }}><span style={s.tag(LEVEL_COLORS[cv.level].bg, LEVEL_COLORS[cv.level].color)}>{LEVEL_COLORS[cv.level].label}</span></div></div>
-                <div style={s.formGroup}><label style={s.formLabel}>当前阶段</label><div style={{ padding: '8px 0', color: '#1a3a5c' }}>{STAGE_LABELS[getStageIndex(cv.stage)]}</div></div>
+                <div style={s.formGroup}><label style={s.formLabel}>当前阶段</label><div style={{ padding: '8px 0', color: MAIN_COLOR }}>{STAGE_LABELS[getStageIndex(cv.stage)]}</div></div>
                 <div style={{ ...s.formGroup, ...s.formGroupFull }}><label style={s.formLabel}>危急内容</label><div style={{ padding: '8px 0', color: '#374151', lineHeight: 1.6 }}>{cv.criticalValueContent}</div></div>
                 {cv.patientOutcome && <div style={s.formGroup}><label style={s.formLabel}>患者结局</label><div style={{ padding: '8px 0' }}><span style={s.tag('#f0fdf4', getOutcomeColor(cv.patientOutcome))}>{getOutcomeLabel(cv.patientOutcome)}</span></div></div>}
               </div>
@@ -622,6 +886,9 @@ export default function CriticalValuePage() {
   const [selectedCv, setSelectedCv] = useState<CriticalValue | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'handled' | 'archived'>('all');
   const [levelFilter, setLevelFilter] = useState<CriticalLevel | 'all'>('all');
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferCv, setTransferCv] = useState<CriticalValue | null>(null);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
 
   const filtered = useMemo(() => {
     return cvs.filter(cv => {
@@ -635,14 +902,48 @@ export default function CriticalValuePage() {
 
   const stats = useMemo(() => {
     const now = new Date();
+    const thisMonth = now.toISOString().slice(0, 7); // YYYY-MM
     const today = now.toISOString().slice(0, 10);
+    const thisMonthCvs = cvs.filter(cv => cv.detectedTime.startsWith(thisMonth));
+    const handledCvs = cvs.filter(cv => cv.handled);
+    const pendingCvs = cvs.filter(cv => !cv.handled && cv.stage !== 'archived');
+    const convertedCount = cvs.filter(cv => cv.convertedToFollowUp).length;
+
+    // 及时处理：handled 且未超时
+    const timelyHandled = handledCvs.filter(cv => {
+      const rule = initialEscalationRules.find(r => r.level === cv.level);
+      if (!rule) return true;
+      const detected = new Date(cv.detectedTime).getTime();
+      const handled = new Date(cv.handledTime || cv.detectedTime).getTime();
+      const diffMin = (handled - detected) / 60000;
+      return diffMin <= rule.thresholdMinutes;
+    });
+
+    // 处理中超期：未处理且已超时
+    const overdueCount = pendingCvs.filter(cv => {
+      const rule = initialEscalationRules.find(r => r.level === cv.level);
+      if (!rule) return false;
+      const detected = new Date(cv.detectedTime).getTime();
+      const diffMin = (Date.now() - detected) / 60000;
+      return diffMin >= rule.thresholdMinutes;
+    }).length;
+
+    const timelyRate = handledCvs.length > 0
+      ? Math.round((timelyHandled.length / handledCvs.length) * 100)
+      : 100;
+
     return {
       total: cvs.length,
-      pending: cvs.filter(cv => !cv.handled && cv.stage !== 'archived').length,
-      handled: cvs.filter(cv => cv.handled).length,
+      pending: pendingCvs.length,
+      handled: handledCvs.length,
       today: cvs.filter(cv => cv.detectedTime.startsWith(today)).length,
       critical: cvs.filter(cv => cv.level === 'critical' && !cv.handled).length,
       autoEscalated: cvs.filter(cv => cv.autoEscalation).length,
+      // 新增统计
+      monthlyNew: thisMonthCvs.length,
+      timelyRate,
+      convertedToFollowUp: convertedCount,
+      overdue: overdueCount,
     };
   }, [cvs]);
 
@@ -680,9 +981,9 @@ export default function CriticalValuePage() {
       handledTime: (nextStage === 'handled' || nextStage === 'archived') ? now : selectedCv.handledTime,
       archivalTime: nextStage === 'archived' ? now : selectedCv.archivalTime,
       logs: [...(selectedCv.logs || []), newLog],
-      patientOutcome: (data as any).patientOutcome || selectedCv.patientOutcome,
+      patientOutcome: ((data as Record<string, string>).patientOutcome as PatientOutcome) || selectedCv.patientOutcome,
       ...(data.reportMethod && { reportMethod: data.reportMethod as '电话' }),
-      ...(data.patientResponse && { patientResponse: data.patientResponse }),
+      ...((data as Record<string, string>).patientResponse && { patientResponse: (data as Record<string, string>).patientResponse }),
     };
     setCvs(prev => prev.map(cv => cv.id === selectedCv.id ? updated : cv));
     setSelectedCv(null);
@@ -694,7 +995,7 @@ export default function CriticalValuePage() {
     const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
     const newLog: CriticalValueLog = {
       id: 'log_' + Date.now(), action: 'escalated',
-      description: `手动升级：${(data as any).escalationMessage || '要求上级处理'}`, actionTime: now,
+      description: `手动升级：${(data as Record<string, string>).escalationMessage || '要求上级处理'}`, actionTime: now,
       operatorId: 'U001', operatorName: '张建国', fromStage: selectedCv.stage, toStage: selectedCv.stage,
     };
     const updated: CriticalValue = {
@@ -710,10 +1011,63 @@ export default function CriticalValuePage() {
     setShowModal(false);
   }, [selectedCv]);
 
+  const handleTransferFollowUp = useCallback((scheduledDate: string) => {
+    if (!transferCv) return;
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
+    const followUpId = 'FU' + String(followUps.length + 1).padStart(4, '0');
+
+    // 创建随访记录
+    const newFollowUp: FollowUp = {
+      id: followUpId,
+      patientId: transferCv.patientId,
+      patientName: transferCv.patientName,
+      gender: '男',
+      age: 50,
+      phone: '13800138000',
+      followUpType: '复查提醒',
+      followUpCycle: '30天',
+      status: '待随访',
+      scheduledDate,
+      doctorId: 'U001',
+      doctorName: '张建国',
+      notes: `【危急值转随访】${transferCv.criticalValueContent}`,
+    };
+
+    // 更新危急值记录
+    const updated: CriticalValue = {
+      ...transferCv,
+      convertedToFollowUp: true,
+      followUpRecordId: followUpId,
+      scheduledFollowUpDate: scheduledDate,
+      logs: [
+        ...(transferCv.logs || []),
+        {
+          id: 'log_fu_' + Date.now(),
+          action: 'detected',
+          description: `转随访：计划${scheduledDate}随访`,
+          actionTime: now,
+          operatorId: 'U001',
+          operatorName: '张建国',
+          toStage: transferCv.stage,
+        },
+      ],
+    };
+
+    setFollowUps(prev => [newFollowUp, ...prev]);
+    setCvs(prev => prev.map(cv => cv.id === transferCv.id ? updated : cv));
+    setShowTransferModal(false);
+    setTransferCv(null);
+  }, [transferCv, followUps.length]);
+
   const openModal = (mode: 'add' | 'advance' | 'view' | 'escalate', cv?: CriticalValue) => {
     setModalMode(mode);
     setSelectedCv(cv || null);
     setShowModal(true);
+  };
+
+  const openTransferModal = (cv: CriticalValue) => {
+    setTransferCv(cv);
+    setShowTransferModal(true);
   };
 
   return (
@@ -725,7 +1079,7 @@ export default function CriticalValuePage() {
       </div>
 
       <div style={s.container}>
-        {/* 统计卡片 */}
+        {/* 统计卡片 - 原有 + 新增 */}
         <div style={s.statsGrid}>
           <StatCard icon={Database} iconBg="#eff6ff" iconColor="#1d4ed8" value={stats.total} unit="条" label="危急值总数" />
           <StatCard icon={Clock} iconBg="#fff7ed" iconColor="#ea580c" value={stats.pending} unit="条" label="待处理" />
@@ -733,11 +1087,16 @@ export default function CriticalValuePage() {
           <StatCard icon={Calendar} iconBg="#f5f3ff" iconColor="#7c3aed" value={stats.today} unit="条" label="今日新增" />
           <StatCard icon={Zap} iconBg="#fef2f2" iconColor="#dc2626" value={stats.critical} unit="条" label="一级危急" />
           <StatCard icon={ArrowUpCircle} iconBg="#fffbeb" iconColor="#d97706" value={stats.autoEscalated} unit="条" label="自动升级" />
+          {/* 新增4个统计指标 */}
+          <StatCard icon={TrendingUp} iconBg="#e0f2fe" iconColor={MAIN_COLOR} value={stats.monthlyNew} unit="条" label="本月新增" />
+          <StatCard icon={CheckCircle} iconBg="#f0fdf4" iconColor="#16a34a" value={stats.timelyRate} unit="%" label="及时处理率" />
+          <StatCard icon={ArrowUpRight} iconBg="#f5f3ff" iconColor="#7c3aed" value={stats.convertedToFollowUp} unit="条" label="已转随访" />
+          <StatCard icon={XCircle} iconBg="#fef2f2" iconColor="#dc2626" value={stats.overdue} unit="条" label="处理中超期" />
         </div>
 
         {/* 升级规则说明 */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #eef2f7' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3a5c', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldAlert size={16} color="#1d4ed8" /> 危急值分级处理时限</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: MAIN_COLOR, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldAlert size={16} color="#1d4ed8" /> 危急值分级处理时限</div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {[
               { level: 'critical', label: '一级危急', color: '#dc2626', bg: '#fef2f2', threshold: 15, desc: '危及生命/疑似恶性肿瘤' },
@@ -763,7 +1122,7 @@ export default function CriticalValuePage() {
           </div>
           <div style={s.levelFilter}>
             {(['all', 'critical', 'urgent', 'warning'] as const).map(l => (
-              <button key={l} style={s.levelBtn(levelFilter === l, l === 'all' ? '#1e40af' : LEVEL_COLORS[l as CriticalLevel].color)} onClick={() => setLevelFilter(l as CriticalLevel | 'all')}>
+              <button key={l} style={s.levelBtn(levelFilter === l, l === 'all' ? MAIN_COLOR : LEVEL_COLORS[l as CriticalLevel].color)} onClick={() => setLevelFilter(l as CriticalLevel | 'all')}>
                 {l === 'all' ? '全等级' : LEVEL_COLORS[l as CriticalLevel].label}
               </button>
             ))}
@@ -790,6 +1149,7 @@ export default function CriticalValuePage() {
                   setCvs(prev => prev.map(c => c.id === cv.id ? { ...c, handled: true, stage: 'handled', handledTime: now, logs: [...(c.logs || []), newLog] } : c));
                 }}
                 onEscalate={() => openModal('escalate', cv)}
+                onTransferFollowUp={() => openTransferModal(cv)}
               />
             ))}
           </div>
@@ -811,12 +1171,29 @@ export default function CriticalValuePage() {
           onClose={() => { setShowModal(false); setSelectedCv(null); }}
         />
       )}
+
+      {/* 转随访确认弹窗 */}
+      {showTransferModal && transferCv && (
+        <TransferFollowUpModal
+          cv={transferCv}
+          onConfirm={handleTransferFollowUp}
+          onClose={() => { setShowTransferModal(false); setTransferCv(null); }}
+        />
+      )}
     </div>
   );
 }
 
 // ---------- StatCard ----------
-interface StatCardProps { icon: React.ComponentType<any>; iconBg: string; iconColor: string; value: number | string; unit: string; label: string; }
+interface StatCardProps {
+  icon: React.ComponentType<{ size?: number | string; color?: string }>;
+  iconBg: string;
+  iconColor: string;
+  value: number | string;
+  unit: string;
+  label: string;
+}
+
 function StatCard({ icon: Icon, iconBg, iconColor, value, unit, label }: StatCardProps) {
   return (
     <div style={s.statCard}>

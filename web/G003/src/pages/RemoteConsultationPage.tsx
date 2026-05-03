@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Video, Search, Plus, RefreshCw, Send, Image,
   MessageSquare, Wifi, Clock, User, Building2, Upload, Phone,
   Monitor, Check, X, ArrowRight, Edit3, Eraser, Type,
   Mic, MicOff, Printer, Download, Activity, Stethoscope,
-  FileText, Star, ArrowUp, ArrowDown, Circle, Zap
+  FileText, Star, ArrowUp, ArrowDown, Circle, Zap,
+  Ruler, Square, Pentagon, Move, Undo2, Redo2, Palette,
+  List, ChevronLeft, ChevronRight
 } from 'lucide-react'
 
 const C = {
@@ -18,6 +20,34 @@ const C = {
   border: '#e2e8f0',
   text: '#1a365c',
   textLight: '#64748b',
+}
+
+const ANNOTATION_COLORS = [
+  { name: '红', value: '#dc2626' },
+  { name: '黄', value: '#f59e0b' },
+  { name: '蓝', value: '#3b82f6' },
+  { name: '绿', value: '#10b981' },
+]
+
+type AnnotationType =
+  | 'distance' | 'area' | 'angle' | 'ellipse'
+  | 'arrow' | 'bidirectionalArrow' | 'text' | 'brush'
+
+interface Annotation {
+  id: string
+  type: AnnotationType
+  points: { x: number; y: number }[]
+  color: string
+  creator: string
+  time: string
+  text?: string
+  measure?: number
+  measureUnit?: string
+}
+
+interface AnnotationHistory {
+  annotations: Annotation[]
+  future: Annotation[]
 }
 
 const s: Record<string, React.CSSProperties> = {
@@ -41,7 +71,6 @@ const s: Record<string, React.CSSProperties> = {
   consList: { maxHeight: 440, overflowY: 'auto' as const },
   consItem: { padding: 12, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8, cursor: 'pointer' as const },
   consItemActive: { padding: 12, borderRadius: 8, border: `2px solid ${C.accent}`, marginBottom: 8, cursor: 'pointer' as const, background: '#eff6ff' },
-  // Tab2 实时会诊
   quadScreen: { display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 8, height: 360, marginBottom: 12 },
   quadPane: { background: '#0f172a', borderRadius: 8, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', position: 'relative' as const, minHeight: 160 },
   quadLabel: { color: '#94a3b8', fontSize: 12, position: 'absolute' as const, top: 8, left: 10 },
@@ -51,7 +80,6 @@ const s: Record<string, React.CSSProperties> = {
   toolBtnActive: { padding: '7px 14px', borderRadius: 6, border: 'none', background: C.primary, color: C.white, cursor: 'pointer' as const, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 },
   callBtn: { padding: '7px 14px', borderRadius: 6, border: 'none', background: C.success, color: C.white, cursor: 'pointer' as const, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 },
   callBtnEnd: { padding: '7px 14px', borderRadius: 6, border: 'none', background: C.danger, color: C.white, cursor: 'pointer' as const, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 },
-  // Tab3 报告
   reportSection: { marginBottom: 20 },
   reportRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 },
   label: { fontSize: 13, color: C.textLight, marginBottom: 6 },
@@ -60,7 +88,6 @@ const s: Record<string, React.CSSProperties> = {
   stars: { display: 'flex', gap: 4, alignItems: 'center' },
   starBtn: { fontSize: 22, background: 'none', border: 'none', cursor: 'pointer' as const, color: '#d1d5db', padding: '2px' },
   starBtnActive: { fontSize: 22, background: 'none', border: 'none', cursor: 'pointer' as const, color: '#f59e0b', padding: '2px' },
-  // Tab5 医联体
   hospitalGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
   hospitalCard: { padding: 16, borderRadius: 8, border: `1px solid ${C.border}` },
   hospitalName: { fontWeight: 600, color: C.primary, marginBottom: 4 },
@@ -70,11 +97,20 @@ const s: Record<string, React.CSSProperties> = {
   meterBar: { flex: 1, height: 8, background: C.border, borderRadius: 4, overflow: 'hidden' as const },
   meterFill: { height: '100%', borderRadius: 4, transition: 'width 0.5s' },
   meterValue: { fontSize: 13, fontWeight: 600, width: 72, textAlign: 'right' as const },
-  // Chat
   chatArea: { height: 320, overflowY: 'auto' as const, padding: 16, background: '#f8fafc', borderRadius: 8, marginBottom: 12 },
   chatMsg: { marginBottom: 12, display: 'flex', gap: 8 },
   chatBubbleSelf: { background: C.accent, color: C.white },
   chatBubbleOther: { background: C.white, color: C.text, border: `1px solid ${C.border}` },
+  imageViewer: { position: 'relative', background: '#0f172a', borderRadius: 8, minHeight: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  annotationCanvas: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'crosshair' },
+  annotationOverlay: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' as const },
+  colorPicker: { display: 'flex', gap: 4, alignItems: 'center' },
+  colorSwatch: { width: 20, height: 20, borderRadius: 4, cursor: 'pointer', border: '2px solid transparent', transition: 'all 0.2s' },
+  colorSwatchActive: { width: 20, height: 20, borderRadius: 4, cursor: 'pointer', border: '2px solid #1a365d', transform: 'scale(1.15)' },
+  annotationSidebar: { width: 280, background: C.white, borderRadius: 10, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', maxHeight: 600, overflowY: 'auto' as const },
+  annotationItem: { padding: '10px 12px', borderRadius: 6, border: `1px solid ${C.border}`, marginBottom: 8, cursor: 'pointer' as const, transition: 'all 0.2s' },
+  annotationItemActive: { padding: '10px 12px', borderRadius: 6, border: `2px solid ${C.accent}`, marginBottom: 8, cursor: 'pointer' as const, background: '#eff6ff' },
+  measureDisplay: { position: 'absolute' as const, padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, color: C.white, pointerEvents: 'none' as const, whiteSpace: 'nowrap' },
 }
 
 const DEMO_CONSULTATIONS = [
@@ -114,6 +150,25 @@ const HOSPITALS = [
   { name: '临港新城医院', experts: 9, consults: 61, response: '18分钟', online: false },
 ]
 
+const ANNOTATION_TYPE_LABELS: Record<AnnotationType, string> = {
+  distance: '距离测量',
+  area: '面积测量',
+  angle: '角度测量',
+  ellipse: '椭圆标注',
+  arrow: '箭头标注',
+  bidirectionalArrow: '双向箭头',
+  text: '文字标注',
+  brush: '画笔',
+}
+
+const INITIAL_ANNOTATIONS: Annotation[] = [
+  { id: 'ann1', type: 'distance', points: [{ x: 80, y: 120 }, { x: 200, y: 120 }], color: '#dc2626', creator: '张明', time: '10:05', measure: 12.5, measureUnit: 'cm' },
+  { id: 'ann2', type: 'area', points: [{ x: 50, y: 80 }, { x: 150, y: 180 }], color: '#3b82f6', creator: '李娜', time: '10:08', measure: 25.6, measureUnit: 'cm²' },
+  { id: 'ann3', type: 'arrow', points: [{ x: 100, y: 200 }, { x: 180, y: 150 }], color: '#10b981', creator: '王强', time: '10:12' },
+  { id: 'ann4', type: 'text', points: [{ x: 220, y: 100 }], color: '#f59e0b', creator: '张明', time: '10:15', text: '可疑区域' },
+  { id: 'ann5', type: 'ellipse', points: [{ x: 280, y: 160 }, { x: 360, y: 220 }], color: '#dc2626', creator: '李娜', time: '10:18' },
+]
+
 export default function RemoteConsultationPage() {
   const [activeTab, setActiveTab] = useState('list')
   const [selectedId, setSelectedId] = useState('RC001')
@@ -124,13 +179,14 @@ export default function RemoteConsultationPage() {
   const [networkStatus, setNetworkStatus] = useState<'excellent' | 'good' | 'unstable'>('excellent')
   const [bandwidth, setBandwidth] = useState(280)
   const [latency, setLatency] = useState(12)
-  // Tab2
-  const [annotationTool, setAnnotationTool] = useState<'arrow' | 'brush' | 'text' | null>(null)
+  const [annotationTool, setAnnotationTool] = useState<AnnotationType | null>(null)
+  const [annotationColor, setAnnotationColor] = useState('#dc2626')
+  const [annotations, setAnnotations] = useState<Annotation[]>(INITIAL_ANNOTATIONS)
+  const [history, setHistory] = useState<AnnotationHistory>({ annotations: INITIAL_ANNOTATIONS, future: [] })
   const [isLiveCall, setIsLiveCall] = useState(false)
   const [callDuration, setCallDuration] = useState(0)
   const [isMuted, setIsMuted] = useState(false)
   const [isVideoOn, setIsVideoOn] = useState(true)
-  // Tab3
   const [selectedReport, setSelectedReport] = useState('HR001')
   const [reportForm, setReportForm] = useState({
     conclusion: '肝血管瘤可能性大',
@@ -141,9 +197,15 @@ export default function RemoteConsultationPage() {
     sig1: '张明',
     sig2: '王强',
   })
-  // Tab5 network
   const [jitter, setJitter] = useState(5)
   const [packetLoss, setPacketLoss] = useState(0.1)
+  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null)
+  const [pendingAnnotation, setPendingAnnotation] = useState<{ type: AnnotationType; points: { x: number; y: number }[] } | null>(null)
+  const [textInput, setTextInput] = useState('')
+  const [showTextDialog, setShowTextDialog] = useState(false)
+  const [textDialogPos, setTextDialogPos] = useState({ x: 0, y: 0 })
+  const [annotationSidebarOpen, setAnnotationSidebarOpen] = useState(true)
+  const imageRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -241,6 +303,353 @@ export default function RemoteConsultationPage() {
     return { text: '差', color: C.danger }
   }
 
+  const pushHistory = useCallback((newAnnotations: Annotation[]) => {
+    setHistory(prev => ({
+      annotations: newAnnotations,
+      future: [],
+    }))
+    setAnnotations(newAnnotations)
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    setHistory(prev => {
+      if (prev.annotations.length === 0) return prev
+      const previous = prev.annotations[prev.annotations.length - 1]
+      const newPast = prev.annotations.slice(0, -1)
+      return {
+        annotations: newPast,
+        future: [previous, ...prev.future],
+      }
+    })
+    setAnnotations(history.annotations)
+  }, [history.annotations])
+
+  const handleRedo = useCallback(() => {
+    setHistory(prev => {
+      if (prev.future.length === 0) return prev
+      const next = prev.future[0]
+      const newFuture = prev.future.slice(1)
+      return {
+        annotations: [...prev.annotations, next],
+        future: newFuture,
+      }
+    })
+    setAnnotations(history.annotations)
+  }, [history.annotations])
+
+  const getImageCoordinates = (e: React.MouseEvent<HTMLDivElement>): { x: number; y: number } => {
+    if (!imageRef.current) return { x: 0, y: 0 }
+    const rect = imageRef.current.getBoundingClientRect()
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    }
+  }
+
+  const calculateDistance = (p1: { x: number; y: number }, p2: { x: number; y: number }, width: number, height: number): number => {
+    const dx = (p2.x - p1.x) * (width / 100)
+    const dy = (p2.y - p1.y) * (height / 100)
+    const pixelDist = Math.sqrt(dx * dx + dy * dy)
+    const cmPerPixel = 0.05
+    return Number((pixelDist * cmPerPixel).toFixed(2))
+  }
+
+  const calculateArea = (p1: { x: number; y: number }, p2: { x: number; y: number }, width: number, height: number): number => {
+    const w = Math.abs(p2.x - p1.x) * (width / 100)
+    const h = Math.abs(p2.y - p1.y) * (height / 100)
+    const pixelArea = w * h
+    const cm2PerPixel2 = 0.0025
+    return Number((pixelArea * cm2PerPixel2).toFixed(2))
+  }
+
+  const calculateAngle = (p1: { x: number; y: number }, vertex: { x: number; y: number }, p2: { x: number; y: number }): number => {
+    const v1 = { x: p1.x - vertex.x, y: p1.y - vertex.y }
+    const v2 = { x: p2.x - vertex.x, y: p2.y - vertex.y }
+    const dot = v1.x * v2.x + v1.y * v2.y
+    const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y)
+    const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y)
+    const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)))
+    const angleRad = Math.acos(cosAngle)
+    return Number((angleRad * (180 / Math.PI)).toFixed(1))
+  }
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!annotationTool) return
+    const coords = getImageCoordinates(e)
+
+    if (annotationTool === 'text') {
+      setTextDialogPos({ x: e.clientX - (imageRef.current?.getBoundingClientRect().left || 0), y: e.clientY - (imageRef.current?.getBoundingClientRect().top || 0) })
+      setShowTextDialog(true)
+      return
+    }
+
+    if (annotationTool === 'distance' || annotationTool === 'area' || annotationTool === 'ellipse') {
+      if (!pendingAnnotation) {
+        setPendingAnnotation({ type: annotationTool, points: [coords] })
+      } else {
+        const width = imageRef.current?.offsetWidth || 400
+        const height = imageRef.current?.offsetHeight || 280
+        let measure: number | undefined
+        let measureUnit: string | undefined
+
+        if (annotationTool === 'distance') {
+          measure = calculateDistance(pendingAnnotation.points[0], coords, width, height)
+          measureUnit = 'cm'
+        } else if (annotationTool === 'area') {
+          measure = calculateArea(pendingAnnotation.points[0], coords, width, height)
+          measureUnit = 'cm²'
+        }
+
+        const newAnnotation: Annotation = {
+          id: `ann${Date.now()}`,
+          type: annotationTool,
+          points: [pendingAnnotation.points[0], coords],
+          color: annotationColor,
+          creator: '我',
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          measure,
+          measureUnit,
+        }
+        const newAnnotations = [...annotations, newAnnotation]
+        pushHistory(newAnnotations)
+        setPendingAnnotation(null)
+      }
+    } else if (annotationTool === 'angle') {
+      if (!pendingAnnotation) {
+        setPendingAnnotation({ type: annotationTool, points: [coords] })
+      } else if (pendingAnnotation.points.length === 1) {
+        setPendingAnnotation({ type: annotationTool, points: [pendingAnnotation.points[0], coords] })
+      } else {
+        const angle = calculateAngle(pendingAnnotation.points[0], pendingAnnotation.points[1], coords)
+        const newAnnotation: Annotation = {
+          id: `ann${Date.now()}`,
+          type: annotationTool,
+          points: [pendingAnnotation.points[0], pendingAnnotation.points[1], coords],
+          color: annotationColor,
+          creator: '我',
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          measure: angle,
+          measureUnit: '°',
+        }
+        const newAnnotations = [...annotations, newAnnotation]
+        pushHistory(newAnnotations)
+        setPendingAnnotation(null)
+      }
+    } else if (annotationTool === 'arrow' || annotationTool === 'bidirectionalArrow') {
+      if (!pendingAnnotation) {
+        setPendingAnnotation({ type: annotationTool, points: [coords] })
+      } else {
+        const newAnnotation: Annotation = {
+          id: `ann${Date.now()}`,
+          type: annotationTool,
+          points: [pendingAnnotation.points[0], coords],
+          color: annotationColor,
+          creator: '我',
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        }
+        const newAnnotations = [...annotations, newAnnotation]
+        pushHistory(newAnnotations)
+        setPendingAnnotation(null)
+      }
+    }
+  }
+
+  const handleTextAnnotationConfirm = (text: string) => {
+    if (!text.trim()) {
+      setShowTextDialog(false)
+      return
+    }
+    const newAnnotation: Annotation = {
+      id: `ann${Date.now()}`,
+      type: 'text',
+      points: [{ x: textDialogPos.x, y: textDialogPos.y }],
+      color: annotationColor,
+      creator: '我',
+      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      text,
+    }
+    const newAnnotations = [...annotations, newAnnotation]
+    pushHistory(newAnnotations)
+    setShowTextDialog(false)
+    setTextInput('')
+  }
+
+  const handleClearAnnotations = () => {
+    pushHistory([])
+    setPendingAnnotation(null)
+  }
+
+  const handleAnnotationItemClick = (annId: string) => {
+    setSelectedAnnotation(annId)
+  }
+
+  const getAnnotationPosition = (ann: Annotation): React.CSSProperties => {
+    if (ann.points.length === 0) return { display: 'none' }
+    const first = ann.points[0]
+    return {
+      left: `${first.x}%`,
+      top: `${first.y}%`,
+    }
+  }
+
+  const renderAnnotation = (ann: Annotation, index: number) => {
+    const isSelected = selectedAnnotation === ann.id
+    const style: React.CSSProperties = {
+      position: 'absolute',
+      pointerEvents: 'none',
+      color: ann.color,
+      fontSize: 12,
+      fontWeight: 600,
+    }
+
+    if (ann.type === 'distance' && ann.points.length >= 2) {
+      const [p1, p2] = ann.points
+      const midX = (p1.x + p2.x) / 2
+      const midY = (p1.y + p2.y) / 2
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI)
+      return (
+        <g key={ann.id}>
+          <line
+            x1={`${p1.x}%`} y1={`${p1.y}%`}
+            x2={`${p2.x}%`} y2={`${p2.y}%`}
+            stroke={ann.color} strokeWidth={2}
+          />
+          <circle cx={`${p1.x}%`} cy={`${p1.y}%`} r={3} fill={ann.color} />
+          <circle cx={`${p2.x}%`} cy={`${p2.y}%`} r={3} fill={ann.color} />
+          {ann.measure !== undefined && (
+            <text
+              x={`${midX}%`} y={`${midY - 4}%`}
+              fill={ann.color} fontSize={12} fontWeight={600}
+              textAnchor="middle"
+            >
+              {ann.measure} {ann.measureUnit}
+            </text>
+          )}
+        </g>
+      )
+    }
+
+    if (ann.type === 'area' && ann.points.length >= 2) {
+      const [p1, p2] = ann.points
+      const x = Math.min(p1.x, p2.x)
+      const y = Math.min(p1.y, p2.y)
+      const w = Math.abs(p2.x - p1.x)
+      const h = Math.abs(p2.y - p1.y)
+      return (
+        <g key={ann.id}>
+          <rect
+            x={`${x}%`} y={`${y}%`}
+            width={`${w}%`} height={`${h}%`}
+            fill={`${ann.color}22`} stroke={ann.color} strokeWidth={2}
+          />
+          {ann.measure !== undefined && (
+            <text
+              x={`${x + w / 2}%`} y={`${y + h / 2}%`}
+              fill={ann.color} fontSize={12} fontWeight={600}
+              textAnchor="middle" dominantBaseline="middle"
+            >
+              {ann.measure} {ann.measureUnit}
+            </text>
+          )}
+        </g>
+      )
+    }
+
+    if (ann.type === 'angle' && ann.points.length >= 3) {
+      const [p1, vertex, p2] = ann.points
+      return (
+        <g key={ann.id}>
+          <line x1={`${p1.x}%`} y1={`${p1.y}%`} x2={`${vertex.x}%`} y2={`${vertex.y}%`} stroke={ann.color} strokeWidth={2} />
+          <line x1={`${vertex.x}%`} y1={`${vertex.y}%`} x2={`${p2.x}%`} y2={`${p2.y}%`} stroke={ann.color} strokeWidth={2} />
+          <circle cx={`${vertex.x}%`} cy={`${vertex.y}%`} r={3} fill={ann.color} />
+          {ann.measure !== undefined && (
+            <text
+              x={`${vertex.x + 5}%`} y={`${vertex.y - 5}%`}
+              fill={ann.color} fontSize={12} fontWeight={600}
+            >
+              {ann.measure}{ann.measureUnit}
+            </text>
+          )}
+        </g>
+      )
+    }
+
+    if (ann.type === 'ellipse' && ann.points.length >= 2) {
+      const [p1, p2] = ann.points
+      const cx = (p1.x + p2.x) / 2
+      const cy = (p1.y + p2.y) / 2
+      const rx = Math.abs(p2.x - p1.x) / 2
+      const ry = Math.abs(p2.y - p1.y) / 2
+      return (
+        <ellipse
+          key={ann.id}
+          cx={`${cx}%`} cy={`${cy}%`}
+          rx={`${rx}%`} ry={`${ry}%`}
+          fill={`${ann.color}22`} stroke={ann.color} strokeWidth={2}
+        />
+      )
+    }
+
+    if (ann.type === 'arrow' && ann.points.length >= 2) {
+      const [p1, p2] = ann.points
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x)
+      const headLen = 8
+      return (
+        <g key={ann.id}>
+          <line x1={`${p1.x}%`} y1={`${p1.y}%`} x2={`${p2.x}%`} y2={`${p2.y}%`} stroke={ann.color} strokeWidth={2} />
+          <polygon
+            points={`
+              ${p2.x},${p2.y}
+              ${p2.x - headLen * Math.cos(angle - Math.PI / 6)},${p2.y - headLen * Math.sin(angle - Math.PI / 6)}
+              ${p2.x - headLen * Math.cos(angle + Math.PI / 6)},${p2.y - headLen * Math.sin(angle + Math.PI / 6)}
+            `}
+            fill={ann.color}
+            transform={`translate(-50,-50) scale(0.5)`}
+          />
+        </g>
+      )
+    }
+
+    if (ann.type === 'bidirectionalArrow' && ann.points.length >= 2) {
+      const [p1, p2] = ann.points
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x)
+      const headLen = 8
+      return (
+        <g key={ann.id}>
+          <line x1={`${p1.x}%`} y1={`${p1.y}%`} x2={`${p2.x}%`} y2={`${p2.y}%`} stroke={ann.color} strokeWidth={2} />
+          <polygon
+            points={`${p1.x},${p1.y} ${p1.x - headLen * Math.cos(angle - Math.PI / 6)},${p1.y - headLen * Math.sin(angle - Math.PI / 6)} ${p1.x - headLen * Math.cos(angle + Math.PI / 6)},${p1.y - headLen * Math.sin(angle + Math.PI / 6)}`}
+            fill={ann.color}
+            transform={`translate(-50,-50) scale(0.5)`}
+          />
+          <polygon
+            points={`${p2.x},${p2.y} ${p2.x - headLen * Math.cos(angle - Math.PI / 6)},${p2.y - headLen * Math.sin(angle - Math.PI / 6)} ${p2.x - headLen * Math.cos(angle + Math.PI / 6)},${p2.y - headLen * Math.sin(angle + Math.PI / 6)}`}
+            fill={ann.color}
+            transform={`translate(-50,-50) scale(0.5)`}
+          />
+        </g>
+      )
+    }
+
+    if (ann.type === 'text' && ann.text) {
+      return (
+        <text
+          key={ann.id}
+          x={`${ann.points[0].x}%`}
+          y={`${ann.points[0].y}%`}
+          fill={ann.color}
+          fontSize={13}
+          fontWeight={600}
+          style={{ userSelect: 'none' }}
+        >
+          {ann.text}
+        </text>
+      )
+    }
+
+    return null
+  }
+
   const TABS = [
     { key: 'list', label: '会诊申请', icon: <FileText size={14} /> },
     { key: 'realtime', label: '实时会诊', icon: <Video size={14} /> },
@@ -251,7 +660,6 @@ export default function RemoteConsultationPage() {
 
   return (
     <div style={s.root}>
-      {/* Header */}
       <div style={s.header}>
         <div>
           <h1 style={s.title}>远程超声会诊</h1>
@@ -267,7 +675,6 @@ export default function RemoteConsultationPage() {
         </div>
       </div>
 
-      {/* 5G Network Status Bar */}
       <div style={s.networkBar}>
         <Zap size={20} />
         <span style={{ fontWeight: 600 }}>
@@ -281,7 +688,6 @@ export default function RemoteConsultationPage() {
         </div>
       </div>
 
-      {/* KPI Row */}
       <div style={s.kpiRow}>
         {[
           { value: 28, label: '待处理会诊', color: C.danger },
@@ -297,7 +703,6 @@ export default function RemoteConsultationPage() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div style={s.tabRow}>
         {TABS.map(tab => (
           <button
@@ -311,7 +716,6 @@ export default function RemoteConsultationPage() {
         ))}
       </div>
 
-      {/* ===== Tab 1: 会诊申请 ===== */}
       {activeTab === 'list' && (
         <div style={s.mainContent}>
           <div style={s.card}>
@@ -384,13 +788,12 @@ export default function RemoteConsultationPage() {
         </div>
       )}
 
-      {/* ===== Tab 2: 实时会诊（四分屏+标注工具） ===== */}
       {activeTab === 'realtime' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: annotationSidebarOpen ? '1fr 300px 280px' : '1fr 300px', gap: 20 }}>
           <div style={s.card}>
             <div style={s.cardHeader}>
               <span style={s.cardTitle}><Video size={16} color={C.primary} /> 实时超声会诊</span>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {DEMO_REALTIME.map(r => (
                   <button
                     key={r.id}
@@ -408,12 +811,24 @@ export default function RemoteConsultationPage() {
                     {r.id} · {r.patient}
                   </button>
                 ))}
+                <button
+                  onClick={() => setAnnotationSidebarOpen(!annotationSidebarOpen)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: C.white,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <List size={14} color={C.textLight} />
+                </button>
               </div>
             </div>
 
-            {/* 四分屏 */}
             <div style={s.quadScreen}>
-              {/* 左上：超声图像 */}
               <div style={s.quadPane}>
                 <span style={s.quadLabel}>超声图像</span>
                 <div style={{ textAlign: 'center' }}>
@@ -423,7 +838,6 @@ export default function RemoteConsultationPage() {
                 </div>
                 <span style={s.quadParams}>深度:15cm 增益:72</span>
               </div>
-              {/* 右上：操作手法 */}
               <div style={s.quadPane}>
                 <span style={s.quadLabel}>操作手法</span>
                 <div style={{ textAlign: 'center' }}>
@@ -432,7 +846,6 @@ export default function RemoteConsultationPage() {
                 </div>
                 <span style={s.quadParams}>频率:3.5MHz TGC:5</span>
               </div>
-              {/* 左下：申请方专家 */}
               <div style={s.quadPane}>
                 <span style={s.quadLabel}>申请方专家</span>
                 <div style={{ textAlign: 'center' }}>
@@ -441,7 +854,6 @@ export default function RemoteConsultationPage() {
                 </div>
                 <span style={{ ...s.quadLabel, top: 8, left: 10, color: '#10b981', fontSize: 11 }}>● 通话中</span>
               </div>
-              {/* 右下：会诊方专家 */}
               <div style={s.quadPane}>
                 <span style={s.quadLabel}>会诊方专家</span>
                 <div style={{ textAlign: 'center' }}>
@@ -452,7 +864,6 @@ export default function RemoteConsultationPage() {
               </div>
             </div>
 
-            {/* 超声参数条 */}
             <div style={{ display: 'flex', gap: 16, padding: '8px 16px', background: '#f8fafc', borderRadius: 6, marginBottom: 12, fontSize: 12, color: C.textLight }}>
               <span>深度: <strong style={{ color: C.primary }}>15cm</strong></span>
               <span>增益: <strong style={{ color: C.primary }}>72</strong></span>
@@ -461,7 +872,6 @@ export default function RemoteConsultationPage() {
               <span>探头: <strong style={{ color: C.primary }}>凸阵</strong></span>
             </div>
 
-            {/* 标注工具栏 */}
             <div style={s.toolBar}>
               <button
                 style={!isLiveCall ? s.callBtn : s.callBtnEnd}
@@ -471,30 +881,103 @@ export default function RemoteConsultationPage() {
                 {isLiveCall ? '停止会诊' : '开始会诊'}
               </button>
               <span style={{ width: 1, background: C.border, margin: '0 4px' }} />
+
+              <button
+                style={annotationTool === 'distance' ? s.toolBtnActive : s.toolBtn}
+                onClick={() => setAnnotationTool(annotationTool === 'distance' ? null : 'distance')}
+                title="距离测量"
+              >
+                <Ruler size={14} /> 距离
+              </button>
+              <button
+                style={annotationTool === 'area' ? s.toolBtnActive : s.toolBtn}
+                onClick={() => setAnnotationTool(annotationTool === 'area' ? null : 'area')}
+                title="面积测量"
+              >
+                <Square size={14} /> 面积
+              </button>
+              <button
+                style={annotationTool === 'angle' ? s.toolBtnActive : s.toolBtn}
+                onClick={() => setAnnotationTool(annotationTool === 'angle' ? null : 'angle')}
+                title="角度测量"
+              >
+                <Pentagon size={14} /> 角度
+              </button>
+              <button
+                style={annotationTool === 'ellipse' ? s.toolBtnActive : s.toolBtn}
+                onClick={() => setAnnotationTool(annotationTool === 'ellipse' ? null : 'ellipse')}
+                title="椭圆标注"
+              >
+                <Circle size={14} /> 椭圆
+              </button>
+
+              <span style={{ width: 1, background: C.border, margin: '0 4px' }} />
+
               <button
                 style={annotationTool === 'arrow' ? s.toolBtnActive : s.toolBtn}
                 onClick={() => setAnnotationTool(annotationTool === 'arrow' ? null : 'arrow')}
               >
-                <ArrowRight size={14} /> 箭头标注
+                <ArrowRight size={14} /> 箭头
               </button>
               <button
-                style={annotationTool === 'brush' ? s.toolBtnActive : s.toolBtn}
-                onClick={() => setAnnotationTool(annotationTool === 'brush' ? null : 'brush')}
+                style={annotationTool === 'bidirectionalArrow' ? s.toolBtnActive : s.toolBtn}
+                onClick={() => setAnnotationTool(annotationTool === 'bidirectionalArrow' ? null : 'bidirectionalArrow')}
+                title="双向箭头"
               >
-                <Edit3 size={14} /> 画笔标注
+                <Move size={14} /> 双向箭头
               </button>
               <button
                 style={annotationTool === 'text' ? s.toolBtnActive : s.toolBtn}
                 onClick={() => setAnnotationTool(annotationTool === 'text' ? null : 'text')}
               >
-                <Type size={14} /> 文字标注
+                <Type size={14} /> 文字
               </button>
-              <button style={s.toolBtn} onClick={() => setAnnotationTool(null)}>
+
+              <span style={{ width: 1, background: C.border, margin: '0 4px' }} />
+
+              <button
+                style={s.toolBtn}
+                onClick={handleUndo}
+                title="撤销"
+              >
+                <Undo2 size={14} />
+              </button>
+              <button
+                style={s.toolBtn}
+                onClick={handleRedo}
+                title="重做"
+              >
+                <Redo2 size={14} />
+              </button>
+              <button
+                style={s.toolBtn}
+                onClick={handleClearAnnotations}
+              >
                 <Eraser size={14} /> 清除
               </button>
+
               <span style={{ width: 1, background: C.border, margin: '0 4px' }} />
+
+              <div style={s.colorPicker}>
+                <Palette size={14} color={C.textLight} />
+                {ANNOTATION_COLORS.map(c => (
+                  <div
+                    key={c.value}
+                    style={{
+                      ...s.colorSwatch,
+                      ...(annotationColor === c.value ? s.colorSwatchActive : {}),
+                      background: c.value,
+                    }}
+                    onClick={() => setAnnotationColor(c.value)}
+                    title={c.name}
+                  />
+                ))}
+              </div>
+
+              <span style={{ width: 1, background: C.border, margin: '0 4px' }} />
+
               <button style={s.toolBtn}>
-                <Image size={14} /> 冻结图像
+                <Image size={14} /> 冻结
               </button>
               <button style={s.toolBtn}>
                 <Download size={14} /> 截图
@@ -506,7 +989,6 @@ export default function RemoteConsultationPage() {
             </div>
           </div>
 
-          {/* 右侧信息栏 */}
           <div style={s.card}>
             <div style={s.cardHeader}>
               <span style={s.cardTitle}><Activity size={16} color={C.primary} /> 会诊信息</span>
@@ -544,10 +1026,72 @@ export default function RemoteConsultationPage() {
               </div>
             </div>
           </div>
+
+          {annotationSidebarOpen && (
+            <div style={s.annotationSidebar}>
+              <div style={{ ...s.cardHeader, marginBottom: 12, paddingBottom: 8 }}>
+                <span style={{ ...s.cardTitle, fontSize: 14 }}><List size={14} color={C.primary} /> 标注列表</span>
+                <span style={{ fontSize: 11, color: C.textLight }}>{annotations.length} 条</span>
+              </div>
+
+              {annotations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', color: C.textLight, fontSize: 13 }}>
+                  暂无标注<br />
+                  <span style={{ fontSize: 12 }}>选择工具后在图像上绘制</span>
+                </div>
+              ) : (
+                <div>
+                  {annotations.map((ann, idx) => (
+                    <div
+                      key={ann.id}
+                      style={selectedAnnotation === ann.id ? s.annotationItemActive : s.annotationItem}
+                      onClick={() => handleAnnotationItemClick(ann.id)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div
+                          style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: ann.color, flexShrink: 0,
+                          }}
+                        />
+                        <span style={{ fontWeight: 600, fontSize: 12, color: C.primary, flex: 1 }}>
+                          {ANNOTATION_TYPE_LABELS[ann.type]}
+                        </span>
+                        <span style={{ fontSize: 10, color: C.textLight }}>{ann.time}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: C.textLight }}>
+                        位置: ({ann.points[0]?.x.toFixed(0)}%, {ann.points[0]?.y.toFixed(0)}%)
+                      </div>
+                      {ann.measure !== undefined && (
+                        <div style={{ fontSize: 11, color: ann.color, fontWeight: 600, marginTop: 2 }}>
+                          测量值: {ann.measure} {ann.measureUnit}
+                        </div>
+                      )}
+                      {ann.text && (
+                        <div style={{ fontSize: 11, color: ann.color, marginTop: 2 }}>
+                          "{ann.text}"
+                        </div>
+                      )}
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                        {ann.creator}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop: 12, padding: '8px 12px', background: '#f8fafc', borderRadius: 6, fontSize: 11, color: C.textLight }}>
+                <div style={{ fontWeight: 600, color: C.primary, marginBottom: 4 }}>操作提示</div>
+                <div style={{ marginBottom: 2 }}>• 距离/面积/椭圆：点击拖拽</div>
+                <div style={{ marginBottom: 2 }}>• 角度：依次点击三点</div>
+                <div style={{ marginBottom: 2 }}>• 箭头/双向箭头：点击拖拽</div>
+                <div>• 文字：点击输入</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ===== Tab 3: 会诊报告 ===== */}
       {activeTab === 'report' && (
         <div style={s.card}>
           <div style={s.cardHeader}>
@@ -585,7 +1129,6 @@ export default function RemoteConsultationPage() {
           </div>
 
           <div style={s.reportSection}>
-            {/* 报告信息 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, marginBottom: 20 }}>
               <div><span style={{ color: '#94a3b8', fontSize: 12 }}>患者：</span><strong style={{ color: C.primary }}>{reportSelected?.patient}</strong></div>
               <div><span style={{ color: '#94a3b8', fontSize: 12 }}>检查：</span><strong style={{ color: C.primary }}>{reportSelected?.examType}</strong></div>
@@ -593,7 +1136,6 @@ export default function RemoteConsultationPage() {
               <div><span style={{ color: '#94a3b8', fontSize: 12 }}>会诊医师：</span><strong style={{ color: C.primary }}>{reportSelected?.doctor}</strong></div>
             </div>
 
-            {/* 诊断结论 */}
             <div style={{ marginBottom: 16 }}>
               <div style={s.label}>诊断结论</div>
               <textarea
@@ -677,7 +1219,6 @@ export default function RemoteConsultationPage() {
             </div>
           </div>
 
-          {/* 操作按钮 */}
           <div style={{ display: 'flex', gap: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
             <button style={{ flex: 1, padding: '10px 20px', background: C.primary, color: C.white, border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14 }}>
               <Check size={16} /> 保存报告
@@ -689,63 +1230,309 @@ export default function RemoteConsultationPage() {
         </div>
       )}
 
-      {/* ===== Tab 4: 图文交流 ===== */}
       {activeTab === 'chat' && (
-        <div style={s.card}>
-          <div style={s.cardHeader}>
-            <span style={s.cardTitle}><MessageSquare size={16} color={C.primary} /> 实时沟通</span>
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>{selected?.hospital} · {selected?.doctor}</span>
-          </div>
-          <div style={s.chatArea}>
-            {messages.map(m => (
+        <div style={{ display: 'grid', gridTemplateColumns: annotationSidebarOpen ? '1fr 280px' : '1fr', gap: 20 }}>
+          <div style={s.card}>
+            <div style={s.cardHeader}>
+              <span style={s.cardTitle}><MessageSquare size={16} color={C.primary} /> 实时沟通</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>{selected?.hospital} · {selected?.doctor}</span>
+                <button
+                  onClick={() => setAnnotationSidebarOpen(!annotationSidebarOpen)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: C.white,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <List size={14} color={C.textLight} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div
-                key={m.id}
-                style={{ ...s.chatMsg, ...(m.type === 'self' ? { flexDirection: 'row-reverse' } : {}) }}
+                ref={imageRef}
+                style={s.imageViewer}
+                onClick={handleImageClick}
               >
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: m.type === 'self' ? C.accent : C.success,
-                  color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 600, fontSize: 12, flexShrink: 0
-                }}>
-                  {m.sender[0]}
+                <Activity size={48} color="#334155" />
+                <div style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>超声图像</div>
+                <div style={{ color: '#10b981', fontSize: 12, marginTop: 4 }}>B-Mode</div>
+
+                <svg style={s.annotationOverlay}>
+                  {annotations.map((ann, idx) => renderAnnotation(ann, idx))}
+                  {pendingAnnotation && pendingAnnotation.points.length > 0 && (
+                    <circle
+                      cx={`${pendingAnnotation.points[0].x}%`}
+                      cy={`${pendingAnnotation.points[0].y}%`}
+                      r={4}
+                      fill={annotationColor}
+                    />
+                  )}
+                </svg>
+
+                {annotationTool && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: '4px 12px',
+                    background: `${annotationColor}dd`,
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: C.white,
+                    fontWeight: 600,
+                  }}>
+                    {ANNOTATION_TYPE_LABELS[annotationTool]} - 点击开始
+                    {annotationTool === 'angle' && pendingAnnotation && pendingAnnotation.points.length === 1 && ' → 再点击第二点'}
+                    {annotationTool === 'angle' && pendingAnnotation && pendingAnnotation.points.length === 2 && ' → 点击第三点'}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div style={{ marginBottom: 8, fontWeight: 600, fontSize: 13, color: C.primary }}>工具栏</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                  <button
+                    style={annotationTool === 'distance' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'distance' ? null : 'distance')}
+                  >
+                    <Ruler size={12} /> 距离
+                  </button>
+                  <button
+                    style={annotationTool === 'area' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'area' ? null : 'area')}
+                  >
+                    <Square size={12} /> 面积
+                  </button>
+                  <button
+                    style={annotationTool === 'angle' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'angle' ? null : 'angle')}
+                  >
+                    <Pentagon size={12} /> 角度
+                  </button>
+                  <button
+                    style={annotationTool === 'ellipse' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'ellipse' ? null : 'ellipse')}
+                  >
+                    <Circle size={12} /> 椭圆
+                  </button>
+                  <button
+                    style={annotationTool === 'arrow' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'arrow' ? null : 'arrow')}
+                  >
+                    <ArrowRight size={12} /> 箭头
+                  </button>
+                  <button
+                    style={annotationTool === 'bidirectionalArrow' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'bidirectionalArrow' ? null : 'bidirectionalArrow')}
+                  >
+                    <Move size={12} /> 双向
+                  </button>
+                  <button
+                    style={annotationTool === 'text' ? s.toolBtnActive : s.toolBtn}
+                    onClick={() => setAnnotationTool(annotationTool === 'text' ? null : 'text')}
+                  >
+                    <Type size={12} /> 文字
+                  </button>
                 </div>
-                <div style={{ ...s.chatBubble, ...(m.type === 'self' ? s.chatBubbleSelf : s.chatBubbleOther) }}>
-                  <div style={{ fontSize: 11, color: m.type === 'self' ? '#bfdbfe' : '#94a3b8', marginBottom: 2 }}>{m.sender}</div>
-                  {m.content}
-                  <div style={{ fontSize: 10, color: m.type === 'self' ? '#bfdbfe' : '#94a3b8', marginTop: 4, textAlign: 'right' }}>{m.time}</div>
+
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  <button style={s.toolBtn} onClick={handleUndo}>
+                    <Undo2 size={12} /> 撤销
+                  </button>
+                  <button style={s.toolBtn} onClick={handleRedo}>
+                    <Redo2 size={12} /> 重做
+                  </button>
+                  <button style={s.toolBtn} onClick={handleClearAnnotations}>
+                    <Eraser size={12} /> 清除
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                  <Palette size={12} color={C.textLight} />
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {ANNOTATION_COLORS.map(c => (
+                      <div
+                        key={c.value}
+                        style={{
+                          ...s.colorSwatch,
+                          ...(annotationColor === c.value ? s.colorSwatchActive : {}),
+                          background: c.value,
+                        }}
+                        onClick={() => setAnnotationColor(c.value)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            <div style={s.chatArea}>
+              {messages.map(m => (
+                <div
+                  key={m.id}
+                  style={{ ...s.chatMsg, ...(m.type === 'self' ? { flexDirection: 'row-reverse' } : {}) }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: m.type === 'self' ? C.accent : C.success,
+                    color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 600, fontSize: 12, flexShrink: 0
+                  }}>
+                    {m.sender[0]}
+                  </div>
+                  <div style={{ ...s.chatBubble, ...(m.type === 'self' ? s.chatBubbleSelf : s.chatBubbleOther) }}>
+                    <div style={{ fontSize: 11, color: m.type === 'self' ? '#bfdbfe' : '#94a3b8', marginBottom: 2 }}>{m.sender}</div>
+                    {m.content}
+                    <div style={{ fontSize: 10, color: m.type === 'self' ? '#bfdbfe' : '#94a3b8', marginTop: 4, textAlign: 'right' }}>{m.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginBottom: 8, padding: '4px 8px', background: '#f0fdf4', borderRadius: 4, fontSize: 11, color: C.success }}>
+              <span>● {networkStatus === 'excellent' ? '极好' : networkStatus === 'good' ? '良好' : '不稳定'}</span>
+              <span>带宽: {bandwidth}Mbps</span>
+              <span>延迟: {latency}ms</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, outline: 'none' }}
+                placeholder="输入会诊意见..."
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSend()}
+              />
+              <button
+                onClick={handleSend}
+                style={{ padding: '8px 16px', background: C.primary, color: C.white, border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Send size={14} /> 发送
+              </button>
+            </div>
           </div>
-          {/* 网络状态条 */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 8, padding: '4px 8px', background: '#f0fdf4', borderRadius: 4, fontSize: 11, color: C.success }}>
-            <span>● {networkStatus === 'excellent' ? '极好' : networkStatus === 'good' ? '良好' : '不稳定'}</span>
-            <span>带宽: {bandwidth}Mbps</span>
-            <span>延迟: {latency}ms</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, outline: 'none' }}
-              placeholder="输入会诊意见..."
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-            />
-            <button
-              onClick={handleSend}
-              style={{ padding: '8px 16px', background: C.primary, color: C.white, border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+
+          {annotationSidebarOpen && (
+            <div style={s.annotationSidebar}>
+              <div style={{ ...s.cardHeader, marginBottom: 12, paddingBottom: 8 }}>
+                <span style={{ ...s.cardTitle, fontSize: 14 }}><List size={14} color={C.primary} /> 标注列表</span>
+                <span style={{ fontSize: 11, color: C.textLight }}>{annotations.length} 条</span>
+              </div>
+
+              {annotations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', color: C.textLight, fontSize: 13 }}>
+                  暂无标注<br />
+                  <span style={{ fontSize: 12 }}>选择工具后在图像上绘制</span>
+                </div>
+              ) : (
+                <div>
+                  {annotations.map((ann) => (
+                    <div
+                      key={ann.id}
+                      style={selectedAnnotation === ann.id ? s.annotationItemActive : s.annotationItem}
+                      onClick={() => handleAnnotationItemClick(ann.id)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div
+                          style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: ann.color, flexShrink: 0,
+                          }}
+                        />
+                        <span style={{ fontWeight: 600, fontSize: 12, color: C.primary, flex: 1 }}>
+                          {ANNOTATION_TYPE_LABELS[ann.type]}
+                        </span>
+                        <span style={{ fontSize: 10, color: C.textLight }}>{ann.time}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: C.textLight }}>
+                        位置: ({ann.points[0]?.x.toFixed(0)}%, {ann.points[0]?.y.toFixed(0)}%)
+                      </div>
+                      {ann.measure !== undefined && (
+                        <div style={{ fontSize: 11, color: ann.color, fontWeight: 600, marginTop: 2 }}>
+                          测量值: {ann.measure} {ann.measureUnit}
+                        </div>
+                      )}
+                      {ann.text && (
+                        <div style={{ fontSize: 11, color: ann.color, marginTop: 2 }}>
+                          "{ann.text}"
+                        </div>
+                      )}
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                        {ann.creator}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {showTextDialog && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}
+              onClick={() => setShowTextDialog(false)}
             >
-              <Send size={14} /> 发送
-            </button>
-          </div>
+              <div
+                style={{
+                  background: C.white,
+                  padding: 20,
+                  borderRadius: 10,
+                  width: 300,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div style={{ fontWeight: 600, color: C.primary, marginBottom: 12 }}>
+                  输入文字标注
+                </div>
+                <input
+                  style={{ ...s.input, marginBottom: 12 }}
+                  placeholder="请输入文字..."
+                  value={textInput}
+                  onChange={e => setTextInput(e.target.value)}
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleTextAnnotationConfirm(textInput)
+                    if (e.key === 'Escape') setShowTextDialog(false)
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button
+                    style={{ padding: '6px 16px', background: '#f1f5f9', color: C.textLight, border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                    onClick={() => setShowTextDialog(false)}
+                  >
+                    取消
+                  </button>
+                  <button
+                    style={{ padding: '6px 16px', background: C.primary, color: C.white, border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                    onClick={() => handleTextAnnotationConfirm(textInput)}
+                  >
+                    确认
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ===== Tab 5: 医联体协作 ===== */}
       {activeTab === 'alliance' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* 左侧：医院网络 */}
           <div style={s.card}>
             <div style={s.cardHeader}>
               <span style={s.cardTitle}><Building2 size={16} color={C.primary} /> 医联体协作医院</span>
@@ -765,7 +1552,6 @@ export default function RemoteConsultationPage() {
             </div>
           </div>
 
-          {/* 右侧：5G网络质量监控 */}
           <div style={s.card}>
             <div style={s.cardHeader}>
               <span style={s.cardTitle}><Zap size={16} color={C.warning} /> 5G网络质量监控</span>
@@ -774,7 +1560,6 @@ export default function RemoteConsultationPage() {
               </span>
             </div>
 
-            {/* 带宽 */}
             <div style={s.meterRow}>
               <span style={s.meterLabel}>带宽</span>
               <div style={s.meterBar}>
@@ -783,7 +1568,6 @@ export default function RemoteConsultationPage() {
               <span style={{ ...s.meterValue, color: getMeterColor((bandwidth / 500) * 100) }}>{bandwidth} Mbps</span>
             </div>
 
-            {/* 延迟 */}
             <div style={s.meterRow}>
               <span style={s.meterLabel}>延迟</span>
               <div style={s.meterBar}>
@@ -792,7 +1576,6 @@ export default function RemoteConsultationPage() {
               <span style={{ ...s.meterValue, color: getMeterColor(Math.max(0, 100 - (latency / 50) * 100)) }}>{latency} ms</span>
             </div>
 
-            {/* 抖动 */}
             <div style={s.meterRow}>
               <span style={s.meterLabel}>抖动</span>
               <div style={s.meterBar}>
@@ -801,7 +1584,6 @@ export default function RemoteConsultationPage() {
               <span style={{ ...s.meterValue, color: getMeterColor(Math.max(0, 100 - (jitter / 20) * 100)) }}>{jitter} ms</span>
             </div>
 
-            {/* 丢包率 */}
             <div style={s.meterRow}>
               <span style={s.meterLabel}>丢包率</span>
               <div style={s.meterBar}>
@@ -810,7 +1592,6 @@ export default function RemoteConsultationPage() {
               <span style={{ ...s.meterValue, color: getMeterColor(Math.max(0, 100 - (packetLoss / 5) * 100)) }}>{packetLoss}%</span>
             </div>
 
-            {/* 自动降质 */}
             <div style={{ marginTop: 16, padding: '12px 16px', background: '#fff7ed', borderRadius: 8, border: '1px solid #fed7aa' }}>
               <div style={{ fontWeight: 600, color: C.warning, fontSize: 13, marginBottom: 8 }}>⚡ 自动降质策略</div>
               <div style={{ fontSize: 12, color: C.textLight }}>
@@ -825,7 +1606,6 @@ export default function RemoteConsultationPage() {
               </div>
             </div>
 
-            {/* 技术参数 */}
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
                 { label: '编码格式', value: 'H.265/HEVC' },
