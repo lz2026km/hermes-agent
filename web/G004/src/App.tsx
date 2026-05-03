@@ -122,10 +122,10 @@ const s: Record<string, React.CSSProperties> = {
   navItem: {
     display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px',
     cursor: 'pointer', borderRadius: 0, transition: 'all 0.2s',
-    fontSize: 16, color: 'rgba(255,255,255,0.8)', borderLeft: '4px solid transparent', lineHeight: 1.5,
+    fontSize: 16, color: '#ffffff', borderLeft: '4px solid transparent', lineHeight: 1.5,
   },
   navItemActive: {
-    background: 'rgba(255,255,255,0.15)', color: '#fff',
+    background: 'rgba(255,255,255,0.15)', color: '#ffffff',
     borderLeft: '4px solid #4ade80',
   },
   navIcon: { flexShrink: 0, opacity: 0.9 },
