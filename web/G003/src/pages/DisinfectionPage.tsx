@@ -1,5 +1,5 @@
 // ============================================================
-// G004 超声管理系统 - 洗消追溯管理页面
+// G003 超声RIS系统 - 洗消追溯管理页面
 // 洗消流程记录+各步骤时间线展示+追溯查询
 // ============================================================
 import { useState, useMemo } from 'react'
@@ -405,12 +405,12 @@ const generateExtraDisinfectionRecords = (base: DisinfectionRecord[]): Disinfect
   if (base.length >= 30) return base.slice(0, 30)
   const extra: DisinfectionRecord[] = []
   const endoscopes = [
-    { id: 'EN001', name: 'Olympus电子腹部超声', code: 'GIF-H290' },
-    { id: 'EN002', name: 'Olympus电子腹部超声(备用)', code: 'GIF-H260' },
-    { id: 'EN003', name: 'Olympus电子浅表超声', code: 'CF-H290I' },
-    { id: 'EN004', name: 'Olympus电子浅表超声(细径)', code: 'PCF-H290I' },
-    { id: 'EN005', name: 'Olympus电子介入超声', code: 'TJF-260V' },
-    { id: 'EN006', name: 'Olympus电子肺部超声', code: 'BF-H290' },
+    { id: 'USP001', name: '迈瑞 凸阵探头 C5-2', code: 'C5-2' },
+    { id: 'USP002', name: '迈瑞 线阵探头 L12-4E', code: 'L12-4E' },
+    { id: 'USP003', name: '飞利浦 相控阵探头 P4-2', code: 'P4-2' },
+    { id: 'USP004', name: 'GE 凸阵探头 CA1-5A', code: 'CA1-5A' },
+    { id: 'USP005', name: '西门子 腔内探头 EC4-9', code: 'EC4-9' },
+    { id: 'USP006', name: '迈瑞 线阵探头 ML6-15', code: 'ML6-15' },
   ]
   const persons = ['王海涛', '李娜', '张伟', '刘洋', '陈静']
   const results: DisinfectionRecord['finalResult'][] = ['合格', '合格', '合格', '合格', '合格', '合格', '合格', '合格', '不合格', '待复检']

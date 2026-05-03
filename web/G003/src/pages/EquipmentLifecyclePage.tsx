@@ -6,29 +6,29 @@ import {
 
 // ===== 演示数据：设备全生命周期数据 =====
 const mockDevices = [
-  { id: 'EQ001', name: '电子腹部超声 GIF-H290', model: 'Olympus GIF-H290', serial: 'SN2021H290001', vendor: '奥林巴斯', purchaseDate: '2021-03-15', dept: '腹部超声室', status: '在用', useCount: 4821, lastUse: '2026-04-30', nextMaint: '2026-05-15', lifeMonth: 58, deptRate: 87, totalCost: 168000, maintCost: 12500, spareCost: 3200 },
-  { id: 'EQ002', name: '电子浅表超声 CF-H290I', model: 'Olympus CF-H290I', serial: 'SN2021H290002', vendor: '奥林巴斯', purchaseDate: '2021-03-15', dept: '超声室', status: '在用', useCount: 3890, lastUse: '2026-04-30', nextMaint: '2026-06-01', lifeMonth: 58, deptRate: 72, totalCost: 185000, maintCost: 9800, spareCost: 2800 },
-  { id: 'EQ003', name: '超声探头 EU-ME2', model: 'Olympus EU-ME2', serial: 'SN2022UME2001', vendor: '奥林巴斯', purchaseDate: '2022-07-20', dept: '超声室', status: '维保中', useCount: 1245, lastUse: '2026-04-28', nextMaint: '2026-05-01', lifeMonth: 46, deptRate: 45, totalCost: 320000, maintCost: 8500, spareCost: 1500 },
-  { id: 'EQ004', name: '电子腹部超声 EG-2990I', model: 'Pentax EG-2990I', serial: 'SN2020EG990003', vendor: '宾得', purchaseDate: '2020-11-08', dept: '腹部超声室', status: '在用', useCount: 6234, lastUse: '2026-04-30', nextMaint: '2026-05-20', lifeMonth: 70, deptRate: 95, totalCost: 145000, maintCost: 18200, spareCost: 5600 },
-  { id: 'EQ005', name: '介入超声 JF-260V', model: 'Olympus JF-260V', serial: 'SN2019JF260004', vendor: '奥林巴斯', purchaseDate: '2019-06-01', dept: 'USCP室', status: '在用', useCount: 8920, lastUse: '2026-04-29', nextMaint: '2026-05-05', lifeMonth: 82, deptRate: 88, totalCost: 198000, maintCost: 24600, spareCost: 7800 },
-  { id: 'EQ006', name: '电子浅表超声 PCF-H290I', model: 'Olympus PCF-H290I', serial: 'SN2021H290005', vendor: '奥林巴斯', purchaseDate: '2021-08-22', dept: '超声室', status: '空闲', useCount: 3201, lastUse: '2026-04-25', nextMaint: '2026-06-15', lifeMonth: 56, deptRate: 58, totalCost: 175000, maintCost: 7200, spareCost: 2100 },
-  { id: 'EQ007', name: '胶囊超声系统 MiroCam', model: 'MiroCam MC-1000', serial: 'SN2023MC100001', vendor: 'Intravo', purchaseDate: '2023-02-14', dept: '胶囊超声室', status: '在用', useCount: 680, lastUse: '2026-04-30', nextMaint: '2026-07-01', lifeMonth: 38, deptRate: 32, totalCost: 450000, maintCost: 3000, spareCost: 800 },
-  { id: 'EQ008', name: '电子腹部超声 GIF-XP290N', model: 'Olympus GIF-XP290N', serial: 'SN2018H290006', vendor: '奥林巴斯', purchaseDate: '2018-09-30', dept: '腹部超声室', status: '已报废', useCount: 11230, lastUse: '2024-12-31', nextMaint: '-', lifeMonth: 91, deptRate: 100, totalCost: 128000, maintCost: 42000, spareCost: 18500 },
-  { id: 'EQ009', name: '电子超声 CF-HQ290I', model: 'Olympus CF-HQ290I', serial: 'SN2022H290007', vendor: '奥林巴斯', purchaseDate: '2022-11-11', dept: '超声室', status: '在用', useCount: 2890, lastUse: '2026-04-30', nextMaint: '2026-05-28', lifeMonth: 41, deptRate: 68, totalCost: 192000, maintCost: 5600, spareCost: 1900 },
-  { id: 'EQ010', name: '超声探头主机系统 CV-290', model: 'Olympus CV-290', serial: 'SN2021CV290001', vendor: '奥林巴斯', purchaseDate: '2021-03-15', dept: '腹部超声室', status: '在用', useCount: 0, lastUse: '2026-04-30', nextMaint: '2026-08-01', lifeMonth: 61, deptRate: 92, totalCost: 280000, maintCost: 8000, spareCost: 0 },
-  { id: 'EQ011', name: '超声洗消机 OER-AW', model: 'Olympus OER-AW', serial: 'SN2020OERAW001', vendor: '奥林巴斯', purchaseDate: '2020-07-01', dept: '洗消中心', status: '维保中', useCount: 0, lastUse: '2026-04-29', nextMaint: '2026-05-03', lifeMonth: 69, deptRate: 78, totalCost: 135000, maintCost: 18000, spareCost: 4200 },
-  { id: 'EQ012', name: '高频电刀 ESG-300', model: 'Olympus ESG-300', serial: 'SN2019ESG30001', vendor: '奥林巴斯', purchaseDate: '2019-11-20', dept: '手术室', status: '在用', useCount: 0, lastUse: '2026-04-30', nextMaint: '2026-06-20', lifeMonth: 77, deptRate: 65, totalCost: 98000, maintCost: 11200, spareCost: 3600 },
+  { id: 'EQ001', name: '迈瑞超声诊断系统 Resona 7', model: 'Mindray Resona 7', serial: 'SN2021RM7001', vendor: '迈瑞', purchaseDate: '2021-03-15', dept: '腹部超声室', status: '在用', useCount: 4821, lastUse: '2026-04-30', nextMaint: '2026-05-15', lifeMonth: 58, deptRate: 87, totalCost: 168000, maintCost: 12500, spareCost: 3200 },
+  { id: 'EQ002', name: '飞利浦超声系统 EPIQ 7C', model: 'Philips EPIQ 7C', serial: 'SN2021EP7C001', vendor: '飞利浦', purchaseDate: '2021-03-15', dept: '心脏超声室', status: '在用', useCount: 3890, lastUse: '2026-04-30', nextMaint: '2026-06-01', lifeMonth: 58, deptRate: 72, totalCost: 185000, maintCost: 9800, spareCost: 2800 },
+  { id: 'EQ003', name: 'GE超声系统 Voluson E10', model: 'GE Voluson E10', serial: 'SN2022VE1001', vendor: 'GE医疗', purchaseDate: '2022-07-20', dept: '妇产科超声室', status: '维保中', useCount: 1245, lastUse: '2026-04-28', nextMaint: '2026-05-01', lifeMonth: 46, deptRate: 45, totalCost: 320000, maintCost: 8500, spareCost: 1500 },
+  { id: 'EQ004', name: '西门子超声系统 Acuson Sequoia', model: 'Siemens Acuson Sequoia', serial: 'SN2020ASQ001', vendor: '西门子', purchaseDate: '2020-11-08', dept: '浅表器官超声室', status: '在用', useCount: 6234, lastUse: '2026-04-30', nextMaint: '2026-05-20', lifeMonth: 70, deptRate: 95, totalCost: 145000, maintCost: 18200, spareCost: 5600 },
+  { id: 'EQ005', name: '迈瑞便携超声 M9', model: 'Mindray M9', serial: 'SN2019M9001', vendor: '迈瑞', purchaseDate: '2019-06-01', dept: 'ICU超声室', status: '在用', useCount: 8920, lastUse: '2026-04-29', nextMaint: '2026-05-05', lifeMonth: 82, deptRate: 88, totalCost: 198000, maintCost: 24600, spareCost: 7800 },
+  { id: 'EQ006', name: '日立超声系统 Arietta 850', model: 'Hitachi Arietta 850', serial: 'SN2021HA85001', vendor: '日立医疗', purchaseDate: '2021-08-22', dept: '介入超声室', status: '空闲', useCount: 3201, lastUse: '2026-04-25', nextMaint: '2026-06-15', lifeMonth: 56, deptRate: 58, totalCost: 175000, maintCost: 7200, spareCost: 2100 },
+  { id: 'EQ007', name: '飞利浦超声系统 CX50', model: 'Philips CX50', serial: 'SN2018CX5001', vendor: '飞利浦', purchaseDate: '2018-09-30', dept: '急诊超声室', status: '在用', useCount: 5230, lastUse: '2026-04-30', nextMaint: '2026-06-10', lifeMonth: 88, deptRate: 78, totalCost: 128000, maintCost: 4200, spareCost: 1800 },
+  { id: 'EQ008', name: 'GE便携超声 Vivid iq', model: 'GE Vivid iq', serial: 'SN2018VIQ001', vendor: 'GE医疗', purchaseDate: '2018-09-30', dept: '床旁超声室', status: '在用', useCount: 11230, lastUse: '2024-12-31', nextMaint: '-', lifeMonth: 91, deptRate: 100, totalCost: 128000, maintCost: 42000, spareCost: 18500 },
+  { id: 'EQ009', name: '迈瑞高端超声 Nuewa I9', model: 'Mindray Nuewa I9', serial: 'SN2022NI9001', vendor: '迈瑞', purchaseDate: '2022-11-11', dept: '体检超声室', status: '在用', useCount: 2890, lastUse: '2026-04-30', nextMaint: '2026-05-28', lifeMonth: 41, deptRate: 68, totalCost: 192000, maintCost: 5600, spareCost: 1900 },
+  { id: 'EQ010', name: '西门子超声 Acuson Juniper', model: 'Siemens Acuson Juniper', serial: 'SN2021AJN001', vendor: '西门子', purchaseDate: '2021-03-15', dept: '血管超声室', status: '在用', useCount: 0, lastUse: '2026-04-30', nextMaint: '2026-08-01', lifeMonth: 61, deptRate: 92, totalCost: 280000, maintCost: 8000, spareCost: 0 },
+  { id: 'EQ011', name: '超声探头洗消机 C70', model: '迈瑞 C70', serial: 'SN2020C70001', vendor: '迈瑞', purchaseDate: '2020-07-01', dept: '洗消中心', status: '维保中', useCount: 0, lastUse: '2026-04-29', nextMaint: '2026-05-03', lifeMonth: 69, deptRate: 78, totalCost: 135000, maintCost: 18000, spareCost: 4200 },
+  { id: 'EQ012', name: '超声记录仪 DS8000', model: '迈瑞 DS8000', serial: 'SN2019DS80001', vendor: '迈瑞', purchaseDate: '2019-11-20', dept: '手术室', status: '在用', useCount: 0, lastUse: '2026-04-30', nextMaint: '2026-06-20', lifeMonth: 77, deptRate: 65, totalCost: 98000, maintCost: 11200, spareCost: 3600 },
 ]
 
 const maintenanceRecords = [
-  { date: '2026-04-10', device: 'EQ001', type: '常规保养', cost: 2800, vendor: '奥林巴斯维修站', result: '合格' },
-  { date: '2026-03-28', device: 'EQ003', type: '故障维修', cost: 6200, vendor: '奥林巴斯维修站', result: '已修复' },
-  { date: '2026-03-15', device: 'EQ005', type: '常规保养', cost: 3500, vendor: '奥林巴斯维修站', result: '合格' },
-  { date: '2026-03-01', device: 'EQ002', type: '配件更换', cost: 4800, vendor: '奥林巴斯维修站', result: '已修复' },
-  { date: '2026-02-20', device: 'EQ011', type: '故障维修', cost: 8500, vendor: '第三方维修', result: '已修复' },
-  { date: '2026-02-05', device: 'EQ008', type: '评估报告', cost: 0, vendor: '设备科', result: '建议报废' },
-  { date: '2026-01-18', device: 'EQ004', type: '常规保养', cost: 3200, vendor: '宾得维修站', result: '合格' },
-  { date: '2026-01-05', device: 'EQ007', type: '常规保养', cost: 1500, vendor: 'Intravo维修', result: '合格' },
+  { date: '2026-04-10', device: 'EQ001', type: '常规保养', cost: 2800, vendor: '迈瑞维修站', result: '合格' },
+  { date: '2026-03-28', device: 'EQ003', type: '故障维修', cost: 6200, vendor: 'GE维修站', result: '已修复' },
+  { date: '2026-03-15', device: 'EQ005', type: '常规保养', cost: 3500, vendor: '迈瑞维修站', result: '合格' },
+  { date: '2026-03-01', device: 'EQ002', type: '配件更换', cost: 4800, vendor: '飞利浦维修站', result: '已修复' },
+  { date: '2026-02-20', device: 'EQ004', type: '故障维修', cost: 3200, vendor: '西门子维修站', result: '已修复' },
+  { date: '2026-02-05', device: 'EQ011', type: '评估报告', cost: 0, vendor: '设备科', result: '建议报废' },
+  { date: '2026-01-18', device: 'EQ001', type: '常规保养', cost: 700, vendor: '迈瑞维修站', result: '合格' },
+  { date: '2026-01-05', device: 'EQ006', type: '常规保养', cost: 500, vendor: '日立维修站', result: '合格' },
 ]
 
 // ===== 样式 =====
@@ -310,14 +310,14 @@ export default function EquipmentLifecyclePage() {
               </thead>
               <tbody>
                 {[
-                  { device: 'EQ001', name: '电子腹部超声 GIF-H290', model: 'Olympus GIF-H290', type: '常规保养', date: '2026-05-15', days: 15, vendor: '奥林巴斯维修站', cost: 2800 },
-                  { device: 'EQ005', name: '介入超声 JF-260V', model: 'Olympus JF-260V', type: '常规保养', date: '2026-05-05', days: 5, vendor: '奥林巴斯维修站', cost: 3500 },
-                  { device: 'EQ003', name: '超声探头 EU-ME2', model: 'Olympus EU-ME2', type: '故障维修', date: '2026-05-01', days: 1, vendor: '奥林巴斯维修站', cost: 6200 },
-                  { device: 'EQ004', name: '电子腹部超声 EG-2990I', model: 'Pentax EG-2990I', type: '常规保养', date: '2026-05-20', days: 20, vendor: '宾得维修站', cost: 3200 },
-                  { device: 'EQ002', name: '电子浅表超声 CF-H290I', model: 'Olympus CF-H290I', type: '配件更换', date: '2026-06-01', days: 32, vendor: '奥林巴斯维修站', cost: 8500 },
-                  { device: 'EQ006', name: '电子浅表超声 PCF-H290I', model: 'Olympus PCF-H290I', type: '常规保养', date: '2026-06-15', days: 46, vendor: '奥林巴斯维修站', cost: 2800 },
-                  { device: 'EQ011', name: '超声洗消机 OER-AW', model: 'Olympus OER-AW', type: '故障维修', date: '2026-05-03', days: 3, vendor: '第三方维修', cost: 8500 },
-                  { device: 'EQ012', name: '高频电刀 ESG-300', model: 'Olympus ESG-300', type: '常规保养', date: '2026-06-20', days: 51, vendor: '奥林巴斯维修站', cost: 2200 },
+                  { device: 'EQ001', name: '迈瑞超声诊断系统 Resona 7', model: 'Mindray Resona 7', type: '常规保养', date: '2026-05-15', days: 15, vendor: '迈瑞维修站', cost: 2800 },
+                  { device: 'EQ005', name: '迈瑞便携超声 M9', model: 'Mindray M9', type: '常规保养', date: '2026-05-05', days: 5, vendor: '迈瑞维修站', cost: 3500 },
+                  { device: 'EQ003', name: 'GE超声系统 Voluson E10', model: 'GE Voluson E10', type: '故障维修', date: '2026-05-01', days: 1, vendor: 'GE维修站', cost: 6200 },
+                  { device: 'EQ004', name: '西门子超声系统 Acuson Sequoia', model: 'Siemens Acuson Sequoia', type: '故障维修', date: '2026-05-20', days: 20, vendor: '西门子维修站', cost: 3200 },
+                  { device: 'EQ002', name: '飞利浦超声系统 EPIQ 7C', model: 'Philips EPIQ 7C', type: '配件更换', date: '2026-06-01', days: 32, vendor: '飞利浦维修站', cost: 4800 },
+                  { device: 'EQ006', name: '日立超声系统 Arietta 850', model: 'Hitachi Arietta 850', type: '常规保养', date: '2026-06-15', days: 46, vendor: '日立维修站', cost: 500 },
+                  { device: 'EQ011', name: '超声探头洗消机 C70', model: '迈瑞 C70', type: '评估报告', date: '2026-05-03', days: 3, vendor: '设备科', cost: 0 },
+                  { device: 'EQ012', name: '超声记录仪 DS8000', model: '迈瑞 DS8000', type: '常规保养', date: '2026-06-20', days: 51, vendor: '迈瑞维修站', cost: 2200 },
                 ].map((m, i) => (
                   <tr key={i}>
                     <td style={s.td}><span style={{ fontWeight: 600 }}>{m.name}</span></td>

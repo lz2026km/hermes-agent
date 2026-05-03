@@ -1,5 +1,5 @@
 // ============================================================
-// G004 超声管理系统 - 洗消追溯增强页面
+// G003 超声RIS系统 - 洗消追溯增强页面
 // 超越美迪康基础版：全流程追溯+设备管理+质控预警+RFID+生物监测+超声患者关联
 // ============================================================
 import { useState, useMemo } from 'react'
@@ -173,9 +173,9 @@ const generateDisinfectionRecords = (): DisinfectionRecord[] => {
 
   const records: DisinfectionRecord[] = []
   const operators = ['张伟', '李娜', '王芳', '刘洋', '陈静', '赵鹏', '孙磊']
-  const ultrasoundDeviceModels = ['Olympus CF-HQ290', 'Fujifilm EC-601WM', 'Pentax ED-3490TK', 'Boston Scientific 38032', 'Olympus GIF-H290', 'Fujifilm EC-601WM2']
+  const ultrasoundDeviceModels = ['Mindray C5-2', 'Philips L12-4E', 'GE P4-2', 'Siemens CA1-5A', 'Mindray EC4-9', 'Philips ML6-15']
   const patients = ['王建国', '李秀英', '张德明', '刘玉兰', '陈志强', '杨桂花', '赵文博', '吴晓燕', '周伟平', '郑美华', '孙立新', '朱红梅', '马文涛', '胡丽娜', '郭永强']
-  const procedures = ['腹部超声检查', '浅表超声检查', '介入超声', '肺部超声', '超声超声探头', 'USCP', 'EUS']
+  const procedures = ['腹部超声检查', '浅表超声检查', '介入超声', '肺部超声', '心脏超声', '妇产科超声', '血管超声']
   const disinfectantNames = ['戊二醛 2%', '过氧乙酸 0.2%', '邻苯二甲醛 0.55%', '次氯酸钠 5%']
 
   for (let i = 0; i < 60; i++) {
@@ -294,9 +294,9 @@ const generateDisinfectionRecords = (): DisinfectionRecord[] => {
 
 const generateDeviceUsage = (): DeviceUsage[] => {
   const usage: DeviceUsage[] = []
-  const models = ['Olympus CF-HQ290', 'Fujifilm EC-601WM', 'Pentax ED-3490TK', 'Boston Scientific 38032']
+  const models = ['Mindray C5-2', 'Philips L12-4E', 'GE P4-2', 'Siemens CA1-5A']
   const patients = ['王建国', '李秀英', '张德明', '刘玉兰', '陈志强', '杨桂花', '赵文博', '吴晓燕', '周伟平', '郑美华', '孙立新', '朱红梅', '马文涛', '胡丽娜', '郭永强', '林晓峰', '何秀英', '高建国', '罗玉兰', '谢志明']
-  const checkTypes = ['腹部超声检查', '浅表超声检查', '介入超声', '肺部超声', '超声超声探头', 'USCP', 'EUS']
+  const checkTypes = ['腹部超声检查', '浅表超声检查', '介入超声', '肺部超声', '心脏超声', '妇产科超声', '血管超声']
   const statuses: DeviceUsage['status'][] = ['in_use', 'pending', 'cleaning', 'ready', 'maintenance']
 
   for (let i = 0; i < 20; i++) {
@@ -317,15 +317,15 @@ const generateDeviceUsage = (): DeviceUsage[] => {
 }
 
 const generateEquipment = (): DisinfectionEquipment[] => [
-  { id: 'EQ-001', name: '奥林巴斯 OER-AW', model: 'OER-AW', todayUses: 12, weekUses: 68, lastMaintenance: '2026-04-20', status: 'running', temperature: 37.5, pressure: 0.8 },
-  { id: 'EQ-002', name: '富士通 ED-560', model: 'ED-560', todayUses: 8, weekUses: 45, lastMaintenance: '2026-04-25', status: 'idle', temperature: 22.0 },
-  { id: 'EQ-003', name: '宾得 D-655', model: 'D-655', todayUses: 15, weekUses: 72, lastMaintenance: '2026-04-15', status: 'maintenance' },
-  { id: 'EQ-004', name: '波科 Waltham', model: 'Waltham-380', todayUses: 5, weekUses: 32, lastMaintenance: '2026-04-28', status: 'fault' },
+  { id: 'EQ-001', name: '迈瑞 C70', model: 'C70-超声探头洗消机', todayUses: 12, weekUses: 68, lastMaintenance: '2026-04-20', status: 'running', temperature: 37.5, pressure: 0.8 },
+  { id: 'EQ-002', name: '飞利浦 IU22配套', model: 'IU22-SC', todayUses: 8, weekUses: 45, lastMaintenance: '2026-04-25', status: 'idle', temperature: 22.0 },
+  { id: 'EQ-003', name: 'GE LOGIQ系列配套', model: 'LOGIQ-e', todayUses: 15, weekUses: 72, lastMaintenance: '2026-04-15', status: 'maintenance' },
+  { id: 'EQ-004', name: '西门子 ACUSON配套', model: 'ACUSON-500', todayUses: 5, weekUses: 32, lastMaintenance: '2026-04-28', status: 'fault' },
 ]
 
 const generateMaintenanceRecords = (): MaintenanceRecord[] => {
   const records: MaintenanceRecord[] = []
-  const equipment = ['奥林巴斯 OER-AW', '富士通 ED-560', '宾得 D-655', '波科 Waltham']
+  const equipment = ['迈瑞 C70', '飞利浦 IU22配套', 'GE LOGIQ系列配套', '西门子 ACUSON配套']
   const types = ['日常保养', '故障维修', '性能校准', '滤芯更换', '高温灭菌', '探头更换', '管路清洗', '年度检修']
   const engineers = ['李工程师', '王技师', '张高级工程师', '刘技师', '陈工程师', '周技师', '吴高级工程师', '郑技师']
 
@@ -820,9 +820,9 @@ export default function DisinfectionTracePage() {
                   <option value="all">全部类型</option>
                   <option value="腹部超声">腹部超声检查</option>
                   <option value="浅表超声">浅表超声检查</option>
-                  <option value="十二指肠">介入超声</option>
-                  <option value="支气管">肺部超声</option>
-                  <option value="超声">超声超声探头</option>
+                  <option value="介入超声">介入超声</option>
+                  <option value="肺部超声">肺部超声</option>
+                  <option value="心脏超声">心脏超声</option>
                 </select>
               </div>
               <div style={s.filterGroup}>

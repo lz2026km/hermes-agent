@@ -1,6 +1,6 @@
 // @ts-nocheck
 // ============================================================
-// G003 超声RIS系统 - 超声设备设备管理页面
+// G003 超声RIS系统 - 超声设备管理页面
 // 增强：超声设备全生命周期（位置/状态/使用记录/维护预警）
 // ============================================================
 import { useState, useMemo } from 'react'
@@ -15,7 +15,7 @@ import { initialUltrasoundDevices } from '../data/initialData'
 // ---------- 使用记录类型 ----------
 interface UseRecord {
   id: string;
-  endoscopeId: string;
+  probeId: string;
   patientName: string;
   patientId: string;
   examType: string;
@@ -31,14 +31,14 @@ interface UseRecord {
 
 // ---------- 模拟使用记录数据 ----------
 const mockUseRecords: UseRecord[] = [
-  { id: 'UR001', endoscopeId: 'US001', patientName: '王建国', patientId: 'P001', examType: '彩色多普勒超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '超声设备室1', examDate: '2026-04-29', examTime: '09:00', endTime: '09:25', findings: '慢性浅表性胃炎，肝溃疡（S2期）', status: '已完成' },
-  { id: 'UR002', endoscopeId: 'US001', patientName: '李美华', patientId: 'P002', examType: '彩色多普勒超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '超声设备室1', examDate: '2026-04-28', examTime: '14:00', endTime: '14:30', findings: '食道炎，贲门松弛', status: '已完成' },
-  { id: 'UR003', endoscopeId: 'US001', patientName: '赵大力', patientId: 'P003', examType: '彩色多普勒超声检查', doctorName: '周明', nurseName: '王芳', examRoom: '超声设备室1', examDate: '2026-04-27', examTime: '10:30', endTime: '11:00', findings: '正常肝黏膜', status: '已完成' },
-  { id: 'UR004', endoscopeId: 'US001', patientName: '孙小燕', patientId: 'P004', examType: '彩色多普勒超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '超声设备室1', examDate: '2026-04-26', examTime: '15:00', endTime: '15:28', findings: '胆囊息肉（山田I型）', status: '已完成' },
-  { id: 'UR005', endoscopeId: 'US002', patientName: '周国强', patientId: 'P005', examType: '彩色多普勒超声检查', doctorName: '周明', nurseName: '王芳', examRoom: '超声设备室1', examDate: '2026-04-29', examTime: '10:30', endTime: '11:05', findings: '十二指肠溃疡', status: '已完成' },
-  { id: 'UR006', endoscopeId: 'US003', patientName: '吴婷', patientId: 'P006', examType: '腹部超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '超声设备室2', examDate: '2026-04-28', examTime: '08:30', endTime: '09:15', findings: '肝囊肿（山田II型）', status: '已完成' },
-  { id: 'UR007', endoscopeId: 'US003', patientName: '郑伟', patientId: 'P007', examType: '腹部超声检查', doctorName: '周明', nurseName: '王芳', examRoom: '超声设备室2', examDate: '2026-04-27', examTime: '14:00', endTime: '14:50', findings: '溃疡性结肠炎（活动期）', status: '已完成' },
-  { id: 'UR008', endoscopeId: 'US004', patientName: '陈静', patientId: 'P008', examType: '腹部超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '超声设备室2', examDate: '2026-04-29', examTime: '08:00', endTime: '08:40', findings: '正常结肠黏膜', status: '已完成' },
+  { id: 'UR001', probeId: 'US001', patientName: '王建国', patientId: 'P001', examType: '腹部超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '腹部超声室1', examDate: '2026-04-29', examTime: '09:00', endTime: '09:25', findings: '肝右叶见22×18mm无回声区，边界清，后方回声增强，考虑肝囊肿；胆囊壁光滑，胆总管内径4mm未见扩张', status: '已完成' },
+  { id: 'UR002', probeId: 'US001', patientName: '李美华', patientId: 'P002', examType: '浅表器官超声', doctorName: '张建国', nurseName: '李娟', examRoom: '浅表超声室', examDate: '2026-04-28', examTime: '14:00', endTime: '14:30', findings: '甲状腺左叶见6×5mm低回声结节，边界清，内见点状强回声，TI-RADS 3类；余腺体回声均匀', status: '已完成' },
+  { id: 'UR003', probeId: 'US001', patientName: '赵大力', patientId: 'P003', examType: '腹部超声检查', doctorName: '周明', nurseName: '王芳', examRoom: '腹部超声室1', examDate: '2026-04-27', examTime: '10:30', endTime: '11:00', findings: '胆囊形态大小正常，壁厚2mm光滑，腔内透声好，肝外胆管上段内径5mm，走行正常', status: '已完成' },
+  { id: 'UR004', probeId: 'US001', patientName: '孙小燕', patientId: 'P004', examType: '泌尿系统超声', doctorName: '张建国', nurseName: '李娟', examRoom: '泌尿超声室', examDate: '2026-04-26', examTime: '15:00', endTime: '15:28', findings: '右肾下极见8×7mm强回声，后方伴声影，考虑肾结石；余双肾皮髓质分界清', status: '已完成' },
+  { id: 'UR005', probeId: 'US002', patientName: '周国强', patientId: 'P005', examType: '心脏超声', doctorName: '周明', nurseName: '王芳', examRoom: '心脏超声室', examDate: '2026-04-29', examTime: '10:30', endTime: '11:05', findings: '心脏各房室大小正常，左室射血分数62%，各瓣膜启闭可，未见明显反流', status: '已完成' },
+  { id: 'UR006', probeId: 'US003', patientName: '吴婷', patientId: 'P006', examType: '妇产科超声', doctorName: '张建国', nurseName: '李娟', examRoom: '妇产超声室', examDate: '2026-04-28', examTime: '08:30', endTime: '09:15', findings: '子宫前位，大小正常，子宫内膜厚6mm，宫颈光滑，双侧卵巢大小正常，未见明显异常', status: '已完成' },
+  { id: 'UR007', probeId: 'US003', patientName: '郑伟', patientId: 'P007', examType: '腹部超声检查', doctorName: '周明', nurseName: '王芳', examRoom: '腹部超声室2', examDate: '2026-04-27', examTime: '14:00', endTime: '14:50', findings: '腹膜后见28×22mm低回声团，边界清，内回声均匀，腹腔大血管周围未见明显肿大淋巴结', status: '已完成' },
+  { id: 'UR008', probeId: 'US004', patientName: '陈静', patientId: 'P008', examType: '腹部超声检查', doctorName: '张建国', nurseName: '李娟', examRoom: '腹部超声室1', examDate: '2026-04-29', examTime: '08:00', endTime: '08:40', findings: '肝脾肋下未及，胆囊位于肋间，壁欠光滑，肝内外胆管轻度扩张，上段内径6mm', status: '已完成' },
 ];
 
 // ---------- 样式定义 ----------
@@ -352,7 +352,7 @@ const getWarrantyStatus = (warrantyEnd?: string): 'overdue' | 'warning' | 'ok' =
 }
 
 const getUseRecordsForEndoscope = (endoscopeId: string): UseRecord[] => {
-  return mockUseRecords.filter(r => r.endoscopeId === endoscopeId)
+  return mockUseRecords.filter(r => r.probeId === endoscopeId)
 }
 
 // ---------- 扩充超声设备数据（7条扩充至30条） ----------
