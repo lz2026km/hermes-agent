@@ -298,7 +298,7 @@ function AppShell() {
         <div style={s.sidebarFooter}>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)' }}>智慧超声影像信息管理系统</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#4ade80', fontWeight: 700 }}>v0.10.0</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#4ade80', fontWeight: 700 }}>v0.13.0</div>
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
               onClick={() => setShowVersionModal(true)}>历史版本 ▾</div>
           </div>
@@ -320,7 +320,7 @@ function AppShell() {
             </span>
           </div>
           <div style={s.topbarRight}>
-            <div style={{ fontSize: 11, color: '#3b82f6', fontFamily: 'monospace', background: '#eff6ff', padding: '3px 8px', borderRadius: 10, border: '1px solid #bfdbfe', fontWeight: 600, minWidth: 44, minHeight: 22, display: 'flex', alignItems: 'center' }}>v0.10.0</div>
+            <div style={{ fontSize: 11, color: '#3b82f6', fontFamily: 'monospace', background: '#eff6ff', padding: '3px 8px', borderRadius: 10, border: '1px solid #bfdbfe', fontWeight: 600, minWidth: 44, minHeight: 22, display: 'flex', alignItems: 'center' }}>v0.13.0</div>
             <div style={s.topbarBadge}>
               <Bell size={20} />
               <span style={s.badge}>1</span>
@@ -416,7 +416,7 @@ function AppShell() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ padding: '14px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
                 <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>
-                  v0.10.0 <span style={{ fontSize: 12, fontWeight: 400, color: '#15803d' }}>（当前版本）</span>
+                  v0.13.0 <span style={{ fontSize: 12, fontWeight: 400, color: '#15803d' }}>（当前版本）</span>
                 </div>
                 <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.6 }}>
                   全面对标超声RIS行业竞品（蓝网科技/东软/联影/开立/岱嘉），整合所有产品优秀功能：词库辅助输入、模板分级管理(三级)、报告历史对比(可视化)、报告审核电子签名、危急值超时预警(30/60分钟)、工作量多维统计(医师/设备/部位/时段)、DICOM MWL强化(五步状态机/HL7模拟)、5G远程会诊模块、探头使用维护管理、卫健委数据上报接口；彻底清理所有内镜数据污染；配套扩充超声科演示数据
