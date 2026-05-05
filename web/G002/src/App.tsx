@@ -16,6 +16,25 @@ import QCPage from './pages/QCPage';
 import EducationPage from './pages/EducationPage';
 import StatisticsPage from './pages/StatisticsPage';
 import AdminPage from './pages/AdminPage';
+import DoseCalculationPage from './pages/DoseCalculationPage';
+import InjectionTrackingPage from './pages/InjectionTrackingPage';
+import PETQCPage from './pages/PETQCPage';
+import EquipmentQCPage from './pages/EquipmentQCPage';
+import DoseAlertPage from './pages/DoseAlertPage';
+import SPECTQCPage from './pages/SPECTQCPage';
+import MWLPage from './pages/MWLPage';
+import NuclearStatsPage from './pages/NuclearStatsPage';
+import StaffHealthPage from './pages/StaffHealthPage';
+import ImageArchivePage from './pages/ImageArchivePage';
+import DrugPlanPage from './pages/DrugPlanPage';
+import RejectManagePage from './pages/RejectManagePage';
+import ReportTemplatePage from './pages/ReportTemplatePage';
+import ConsultationPage from './pages/ConsultationPage';
+import RadioisotopePage from './pages/RadioisotopePage';
+import KitManagePage from './pages/KitManagePage';
+import TeachingCasePage from './pages/TeachingCasePage';
+import ReagentQCPage from './pages/ReagentQCPage';
+import RadiationPatrolPage from './pages/RadiationPatrolPage';
 
 const styles: Record<string, React.CSSProperties> = {
   layout: { display: 'flex', height: '100vh', background: '#f4f6f9', fontFamily: '"Microsoft YaHei", "Segoe UI", sans-serif' },
@@ -38,7 +57,7 @@ export default function App() {
           <header style={styles.topbar}>
             <span style={styles.topbarTitle}>G002 核医学信息管理系统</span>
             <div style={styles.topbarRight}>
-              <span style={styles.topbarBadge}>v0.1.0</span>
+              <span style={styles.topbarBadge}>v0.3.0</span>
               <span style={{ fontSize: '13px', color: '#6b7280' }}>2026-05-02</span>
             </div>
           </header>
@@ -59,6 +78,25 @@ export default function App() {
               <Route path="/education" element={<EducationPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/dose-calculation" element={<DoseCalculationPage />} />
+              <Route path="/injection-tracking" element={<InjectionTrackingPage />} />
+              <Route path="/pet-qc" element={<PETQCPage />} />
+              <Route path="/equipment-qc" element={<EquipmentQCPage />} />
+              <Route path="/dose-alert" element={<DoseAlertPage />} />
+              <Route path="/spect-qc" element={<SPECTQCPage />} />
+              <Route path="/mwl" element={<MWLPage />} />
+              <Route path="/nuclear-stats" element={<NuclearStatsPage />} />
+              <Route path="/staff-health" element={<StaffHealthPage />} />
+              <Route path="/image-archive" element={<ImageArchivePage />} />
+              <Route path="/drug-plan" element={<DrugPlanPage />} />
+              <Route path="/reject-manage" element={<RejectManagePage />} />
+              <Route path="/report-template" element={<ReportTemplatePage />} />
+              <Route path="/consultation" element={<ConsultationPage />} />
+              <Route path="/radioisotope" element={<RadioisotopePage />} />
+              <Route path="/kit-manage" element={<KitManagePage />} />
+              <Route path="/teaching-case" element={<TeachingCasePage />} />
+              <Route path="/reagent-qc" element={<ReagentQCPage />} />
+              <Route path="/radiation-patrol" element={<RadiationPatrolPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

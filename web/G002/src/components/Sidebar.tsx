@@ -4,7 +4,10 @@ import {
   Home, ClipboardList, Calendar, Users, CalendarCheck,
   Scan, FileText, Pill, Radio, ShieldCheck,
   GraduationCap, BarChart3, Settings, ChevronLeft, ChevronRight,
-  Activity, ScanLine, Stethoscope
+  Activity, ScanLine, Stethoscope,
+  AlertTriangle, Monitor, Calculator, Syringe, XCircle,
+  Radio as RadioIcon, TrendingUp, Package, CheckCircle,
+  HardDrive, BookOpen, Users as UsersIcon, Calculator as CalcIcon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,6 +50,50 @@ const navGroups = [
     label: '辐射防护',
     items: [
       { key: 'radiation', label: '剂量监测', icon: ShieldCheck, path: '/radiation' },
+      { key: 'dose-alert', label: '剂量预警', icon: AlertTriangle, path: '/dose-alert' },
+      { key: 'radiation-patrol', label: '辐射巡检', icon: Monitor, path: '/radiation-patrol' },
+      { key: 'staff-health', label: '人员健康档案', icon: Activity, path: '/staff-health' },
+    ],
+  },
+  {
+    label: '剂量与注射',
+    items: [
+      { key: 'dose-calculation', label: '个体剂量计算', icon: Calculator, path: '/dose-calculation' },
+      { key: 'injection-tracking', label: '注射追踪', icon: Syringe, path: '/injection-tracking' },
+    ],
+  },
+  {
+    label: '图像质量控制',
+    items: [
+      { key: 'pet-qc', label: 'PET图像质控', icon: Activity, path: '/pet-qc' },
+      { key: 'spect-qc', label: 'SPECT图像质控', icon: Activity, path: '/spect-qc' },
+      { key: 'equipment-qc', label: '设备日常质控', icon: Settings, path: '/equipment-qc' },
+      { key: 'reject-manage', label: '废片管理', icon: XCircle, path: '/reject-manage' },
+    ],
+  },
+  {
+    label: '核素与药盒',
+    items: [
+      { key: 'radioisotope', label: '核素管理', icon: Radio, path: '/radioisotope' },
+      { key: 'drug-plan', label: '药物申购计划', icon: TrendingUp, path: '/drug-plan' },
+      { key: 'kit-manage', label: '药盒管理', icon: Package, path: '/kit-manage' },
+      { key: 'reagent-qc', label: '试剂QC', icon: CheckCircle, path: '/reagent-qc' },
+    ],
+  },
+  {
+    label: '数据中心',
+    items: [
+      { key: 'mwl', label: 'DICOM MWM', icon: Monitor, path: '/mwl' },
+      { key: 'image-archive', label: '图像存档', icon: HardDrive, path: '/image-archive' },
+      { key: 'nuclear-stats', label: '科室统计', icon: BarChart3, path: '/nuclear-stats' },
+    ],
+  },
+  {
+    label: '报告与协作',
+    items: [
+      { key: 'report-template', label: '报告模板', icon: FileText, path: '/report-template' },
+      { key: 'consultation', label: '会诊协作', icon: Users, path: '/consultation' },
+      { key: 'teaching-case', label: '教学病例库', icon: BookOpen, path: '/teaching-case' },
     ],
   },
   {
