@@ -1,5 +1,40 @@
 # G002 院区核医学信息管理系统 工作记录
 
+## v0.3.0 大版本升级（2026-05-05）
+
+**状态：✅ 已完成并发布** | 端口：5177 | 访问：http://8.137.71.217:5177/
+
+### 升级内容（22个新功能页面）
+
+| # | 页面 | 路由 | 功能描述 |
+|---|------|------|----------|
+| 1 | DoseCalculationPage | `/dose-calculation` | 个体剂量计算（体重/SUV/有效剂量） |
+| 2 | InjectionTrackingPage | `/injection-tracking` | 注射追踪记录（冷链/注射/外渗） |
+| 3 | PETQCPage | `/pet-qc` | PET图像质量评价（SUV/伪影/评分） |
+| 4 | SPECTQCPage | `/spect-qc` | SPECT图像质量评价（灰度/分辨率/SNR） |
+| 5 | EquipmentQCPage | `/equipment-qc` | 设备日常质控（PET每日QC/SPECT周校准） |
+| 6 | DoseAlertPage | `/dose-alert` | 辐射剂量阈值预警（患者+职业人员） |
+| 7 | MWLPage | `/mwl` | DICOM Modality Worklist工作流 |
+| 8 | NuclearStatsPage | `/nuclear-stats` | 科室专项统计（12月趋势/设备效率） |
+| 9 | StaffHealthPage | `/staff-health` | 职业人员健康档案（15人×3年剂量） |
+| 10 | ImageArchivePage | `/image-archive` | 图像存档与调取（DICOM存档） |
+| 11 | DrugPlanPage | `/drug-plan` | 药物申购计划（月度/紧急） |
+| 12 | RejectManagePage | `/reject-manage` | 废片管理与质量追踪 |
+| 13 | ReportTemplatePage | `/report-template` | 报告模板管理 |
+| 14 | ConsultationPage | `/consultation` | 会诊协作管理 |
+| 15 | RadioisotopePage | `/radioisotope` | 核素管理（10种核素） |
+| 16 | KitManagePage | `/kit-manage` | 药盒/试剂盒管理 |
+| 17 | TeachingCasePage | `/teaching-case` | 教学病例库（20例） |
+| 18 | ReagentQCPage | `/reagent-qc` | 试剂盒/放射性试剂QC |
+| 19 | RadiationPatrolPage | `/radiation-patrol` | 辐射巡检记录 |
+
+### 技术验收
+- `npx tsc --noEmit` 零错误
+- Playwright：HTTP 200，console errors=0，版本徽章 v0.3.0 可见
+- Git commit：`3d575252d`
+
+---
+
 ## v0.11.0 行业对标升级（2026-05-03）
 
 **状态：🔄 待实施** | 端口：5168 | 访问：http://8.137.71.217:5168/
