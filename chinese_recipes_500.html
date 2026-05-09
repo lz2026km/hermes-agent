@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中华美食千百道 v1.3</title>
+  <style>
+    :root{
+      --c1:#C8553D;--c2:#E8A87C;--c3:#D4AF37;--bg:#FDF6EC;--sf:#FFF;--tx:#2C1810;--mt:#8B7355;--bd:#E8D5C4;--sh:rgba(44,24,16,.1);
+      --bg2:#F5EDE3;--tx2:#1A0F0A;
+    }
+    [data-theme="dark"]{
+      --bg:#1C1410;--sf:#2A1E16;--tx:#F5EDE3;--mt:#A89080;--bd:#3D2E22;--sh:rgba(0,0,0,.3);
+      --bg2:#261A12;--tx2:#F5EDE3;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:18px;scroll-behavior:smooth}
+    body{font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;min-height:100vh;transition:background .3s,color .3s}
+    .aurora{height:6px;background:linear-gradient(90deg,#C8553D,#E8A87C,#D4AF37,#E8A87C,#C8553D,#D4AF37);background-size:200% 100%;animation:aurora 8s ease infinite}
+    @keyframes aurora{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+    /* ── 每日推荐横幅 ── */
+    .dly{background:linear-gradient(135deg,#C8553D,#E8A87C);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:.875rem;cursor:pointer;transition:opacity .2s}
+    .dly:hover{opacity:.9}
+    .dly-lbl{background:rgba(255,255,255,.25);border-radius:12px;padding:2px 10px;font-weight:700;font-size:.75rem;white-space:nowrap}
+    .dly-txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .dly-rhs{font-size:.75rem;opacity:.85;white-space:nowrap}
+
+    /* ── Header ── */
+    .hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 20px;height:60px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--sh);transition:background .3s}
+    .hdr-tl{font-size:1.2rem;font-weight:700;color:var(--c1);white-space:nowrap;font-family:"Songti SC",SimSun,serif;cursor:pointer}
+    .hdr-tl span{color:var(--c3)}
+    .srch{flex:1;max-width:400px;position:relative}
+    .srch input{width:100%;height:44px;padding:0 16px 0 40px;border:1.5px solid var(--bd);border-radius:22px;font-size:1rem;background:var(--bg);color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s}
+    .srch input:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(200,85,61,.12)}
+    .srch span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mt)}
+    .srch-hist{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--sf);border:1px solid var(--bd);border-radius:12px;box-shadow:0 4px 16px var(--sh);z-index:200;overflow:hidden;display:none}
+    .srch-hist.on{display:block}
+    .srch-hi{padding:10px 16px;cursor:pointer;font-size:.875rem;color:var(--tx);display:flex;align-items:center;gap:8px;transition:background .1s}
+    .srch-hi:hover{background:var(--bg)}
+    .srch-hi mark{background:rgba(200,85,61,.15);color:var(--c1);border-radius:3px}
+    .qbar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+    .qbar-lbl{font-size:.75rem;color:var(--mt);white-space:nowrap;font-weight:700}
+    .qbar-eras{display:flex;gap:6px;flex-wrap:wrap}
+    .qbar-types{display:flex;gap:6px;flex-wrap:wrap}
+    .qbar-cuis{display:flex;gap:6px;flex-wrap:wrap}
+    .qchip{padding:4px 12px;border-radius:16px;font-size:.8rem;cursor:pointer;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx);transition:all .15s;white-space:nowrap}
+    .qchip:hover{border-color:var(--c1);color:var(--c1)}
+    .qchip.on{background:var(--c1);color:#fff;border-color:var(--c1)}
+    .qchip .qnum{font-size:.7rem;opacity:.8;margin-left:4px}
+    .hotbar{padding:6px 20px;background:var(--bg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .hotbar-lbl{font-size:.75rem;color:var(--mt);font-weight:700;white-space:nowrap}
+    .hot-tag{padding:3px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;background:rgba(200,85,61,.08);color:var(--c1);border:1px solid rgba(200,85,61,.2);transition:all .12s}
+    .hot-tag:hover{background:rgba(200,85,61,.18)}
+    .era-cover{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:8px 0 20px}
+    .era-card{border-radius:16px;overflow:hidden;cursor:pointer;position:relative;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;transition:transform .25s,box-shadow .25s;border:1px solid var(--bd)}
+    .era-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px var(--sh)}
+    .era-card .era-icon{font-size:2.5rem;margin-bottom:8px}
+    .era-card .era-nm{font-size:1rem;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);margin-bottom:4px}
+    .era-card .era-ct{font-size:.8rem;color:rgba(255,255,255,.85)}
+    .era-card .era-badge{position:absolute;bottom:10px;right:12px;background:rgba(255,255,255,.25);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:10px}
+    .sortbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sortbar-l{font-size:.8rem;color:var(--mt)}
+    .sort-opts{display:flex;gap:4px}
+    .srt-btn{padding:4px 12px;border-radius:12px;font-size:.75rem;cursor:pointer;border:1px solid var(--bd);background:var(--sf);color:var(--tx);transition:all .12s}
+    .srt-btn:hover{border-color:var(--c1)}
+    .srt-btn.on{background:var(--c1);color:#fff;border-color:var(--c1)}
+
+    .hdr-actions{display:flex;gap:6px;align-items:center}
+    .hdr-btn{width:38px;height:38px;border:none;background:transparent;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;position:relative}
+    .hdr-btn:hover{background:var(--bg)}
+    .hdr-btn .bdg{position:absolute;top:2px;right:2px;background:var(--c1);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
+
+    .btn-rnd{height:38px;padding:0 16px;background:var(--c1);color:#fff;border:none;border-radius:19px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,transform .15s}
+    .btn-rnd:hover{background:#a8442e;transform:scale(1.03)}
+
+    /* ── Music button ── */
+    .hdr-music{width:38px;height:38px;border:none;background:transparent;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s;border:2px solid transparent;color:var(--mt);position:relative}
+    .hdr-music:hover{background:var(--bg)}
+    .hdr-music.on{color:var(--c3);border-color:rgba(212,175,55,.5)}
+    .hdr-music.on .music-icon{animation:musicSpin 8s linear infinite}
+    .hdr-music .music-waves{position:absolute;bottom:4px;right:4px;width:10px;height:10px;pointer-events:none}
+    .hdr-music .music-waves span{display:block;width:2.5px;height:2.5px;background:var(--c3);border-radius:50%;position:absolute;opacity:0}
+    .hdr-music.on .music-waves span{opacity:1;animation:waveBounce .8s ease-in-out infinite}
+    .hdr-music .music-waves span:nth-child(1){bottom:0;left:0;animation-delay:0s!important}
+    .hdr-music .music-waves span:nth-child(2){bottom:0;left:4px;animation-delay:.2s!important}
+    .hdr-music .music-waves span:nth-child(3){bottom:0;left:8px;animation-delay:.4s!important}
+    @keyframes musicSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes waveBounce{0%,100%{height:2.5px;transform:translateY(0)}50%{height:7px;transform:translateY(-4px)}}
+
+    /* ── Layout ── */
+    .ly{display:flex;min-height:calc(100vh - 66px - 42px)}
+
+    /* ── Sidebar — 4-dim filter panels ── */
+    .sd{width:190px;min-width:190px;background:var(--sf);border-right:1px solid var(--bd);padding:12px 10px;position:sticky;top:66px;height:calc(100vh - 66px);overflow-y:auto;transition:background .3s}
+    .flt-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--tx);font-size:.8rem;font-weight:700;border-radius:6px;transition:background .12s;margin-bottom:4px}
+    .flt-hdr:hover{background:var(--bg)}
+    .flt-hdr.on{background:var(--c1);color:#fff}
+    .flt-hdr .flt-lbl{display:flex;align-items:center;gap:5px}
+    .flt-hdr .flt-count{font-size:.65rem;background:var(--bd);color:var(--mt);padding:1px 5px;border-radius:8px;min-width:18px;text-align:center}
+    .flt-hdr.on .flt-count{background:rgba(255,255,255,.3);color:#fff}
+    .flt-hdr .arr{font-size:.7rem;transition:transform .2s}
+    .flt-hdr.on .arr{transform:rotate(180deg)}
+    .flt-body{display:none;margin-bottom:10px}
+    .flt-body.on{display:block}
+    .flt-body label{display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;border-radius:5px;font-size:.78rem;color:var(--tx);transition:background .1s;margin-bottom:1px}
+    .flt-body label:hover{background:var(--bg)}
+    .flt-body label input{margin:0;accent-color:var(--c1);width:13px;height:13px;cursor:pointer}
+    .flt-body label span{flex:1}
+    .flt-body label .lnum{font-size:.7rem;color:var(--mt)}
+
+    /* ── Main ── */
+    .mn{flex:1;padding:20px}
+    .mn-ttl{font-size:1rem;color:var(--mt);margin-bottom:12px}
+    .mn-ttl strong{color:var(--c1);font-size:1.2rem}
+
+    /* Active filter tags bar */
+    .tags-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:0}
+    .tag{display:inline-flex;align-items:center;gap:4px;background:var(--c1);color:#fff;font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:16px;cursor:pointer;transition:background .12s}
+    .tag:hover{background:#a8442e}
+    .tag .tag-x{font-size:.9rem;opacity:.8}
+    .tag-e{background:var(--c3);color:var(--tx)}
+    .tag-e:hover{background:#b8962e}
+    .tag-c{background:var(--c2);color:var(--tx2)}
+    .tag-c:hover{background:#d49a6a}
+    .tag-s{background:var(--mt);color:#fff}
+    .tag-s:hover{background:#6b5a45}
+    .clr-all{font-size:.75rem;color:var(--mt);cursor:pointer;padding:4px 8px;border:1px solid var(--bd);border-radius:16px;background:transparent;transition:all .12s}
+    .clr-all:hover{border-color:var(--c1);color:var(--c1)}
+
+    .grd{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+    .card{background:var(--sf);border-radius:12px;box-shadow:0 2px 12px var(--sh);overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s,background .3s;border:1px solid var(--bd);outline:none;position:relative}
+    .card:hover{transform:translateY(-4px);box-shadow:0 8px 24px var(--sh)}
+    .card:focus-visible{outline:3px solid var(--c3);outline-offset:2px}
+    .card .fav{position:absolute;top:8px;right:8px;font-size:1.1rem;z-index:2;opacity:0;transition:opacity .15s;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+    .card:hover .fav,.card.faved .fav{opacity:1}
+    .card.faved .fav{opacity:1}
+    .ci{position:relative;width:100%;padding-top:58%;background:var(--bg);overflow:hidden}
+    .ci img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s}
+    .card:hover .ci img{transform:scale(1.06)}
+    .ci-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:2.2rem;background:linear-gradient(135deg,#f5e6d3,#e8d5c4)}
+    .ci-tg{position:absolute;top:6px;left:6px;background:var(--c1);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:8px}
+    .era-tag{position:absolute;bottom:6px;left:6px;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:8px;color:#fff;opacity:.85;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ci-hv{position:absolute;bottom:8px;right:8px;background:var(--c1);color:#fff;font-size:.65rem;padding:3px 9px;border-radius:8px;display:none}
+    .card:hover .ci-hv{display:block}
+    .cb{padding:10px 12px;min-height:60px}
+    .cn{font-family:"Songti SC",SimSun,serif;font-size:.9rem;font-weight:700;margin-bottom:3px;line-height:1.3}
+    .cs{font-size:.875rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s}
+    .cta{font-size:.8rem;color:var(--c1);font-weight:600;margin-top:4px;display:none}
+    .card:hover .cta{display:block}
+
+    /* ── Skeleton ── */
+    .sk{background:var(--sf);border-radius:12px;overflow:hidden;border:1px solid var(--bd)}
+    .sk-img{height:120px;background:linear-gradient(90deg,var(--bd) 25%,var(--bg) 50%,var(--bd) 75%);background-size:200% 100%;animation:sk 1.4s ease infinite}
+    .sk-tx{padding:12px 14px}
+    .sk-l{height:14px;background:var(--bd);border-radius:6px;margin-bottom:8px;width:75%}
+    .sk-s{height:12px;background:var(--bd);border-radius:6px;width:45%;opacity:.6}
+    @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* ── Empty ── */
+    .emp{text-align:center;padding:60px;color:var(--mt)}
+    .emp .ic{font-size:2.8rem;margin-bottom:10px}
+    *:focus-visible{outline:3px solid var(--c3);outline-offset:2px}
+
+    /* ── Modal ── */
+    .mb{display:none;position:fixed;inset:0;background:rgba(44,24,16,.55);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px}
+    .mb.on{display:flex}
+    .md{background:var(--sf);border-radius:20px;box-shadow:0 8px 40px rgba(44,24,16,.22);max-width:800px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:mdIn .25s ease;transition:background .3s}
+    @keyframes mdIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .md-cls{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--sf);border-bottom:1px solid var(--bd);transition:background .3s}
+    .md-id{font-size:.85rem;color:var(--mt);font-weight:600}
+    .md-x{width:34px;height:34px;border:none;background:var(--bg);border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
+    .md-x:hover{background:var(--bd)}
+    .md-h{position:relative;width:100%;height:260px;background:var(--bg);overflow:hidden;transition:background .3s}
+    .md-h img{width:100%;height:100%;object-fit:cover}
+    .md-h-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:4rem;background:linear-gradient(135deg,#f5e6d3,#e8d5c4)}
+    .md-bdg{position:absolute;bottom:14px;left:14px;background:var(--c1);color:#fff;font-size:.75rem;font-weight:700;padding:3px 12px;border-radius:10px}
+    .md-by{position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,.4);color:#fff;font-size:.65rem;padding:3px 10px;border-radius:8px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .md-bd{padding:24px 28px}
+    .md-n{font-family:"Songti SC",SimSun,serif;font-size:1.5rem;font-weight:700;margin-bottom:8px}
+    .md-mg{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .md-tg{font-size:.875rem;color:var(--mt);background:var(--bg);padding:3px 10px;border-radius:10px;border:1px solid var(--bd);transition:background .3s,color .3s}
+    .md-tg.md-dif{color:var(--c3);border-color:var(--c3);font-size:1rem;letter-spacing:2px}
+    .md-src{font-style:italic;color:var(--c2)!important;border-left:3px solid var(--c3);padding-left:12px!important;background:linear-gradient(90deg,rgba(216,175,55,.06),transparent);border-radius:0 8px 8px 0}
+    .md-sc{margin-bottom:20px}
+    .md-sb{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c3);border-left:3px solid var(--c3);padding-left:7px;margin-bottom:6px}
+    .md-tx{font-size:1rem;line-height:1.9;white-space:pre-line;color:var(--tx);transition:color .3s}
+    .md-tx.sm{font-size:.9rem;color:var(--mt)}
+    .md-tx b,.md-tx strong{color:var(--c1);font-weight:700}
+    .stp{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+    .sn{flex-shrink:0;width:22px;height:22px;background:var(--c1);color:#fff;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+    .stp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:.8rem;color:var(--mt)}
+    .stp-prog{background:var(--bd);border-radius:10px;height:6px;overflow:hidden;margin-bottom:14px}
+    .stp-bar{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .3s}
+    .md-share{display:flex;gap:8px;margin-bottom:16px}
+    .share-btn{flex:1;height:38px;border:1.5px solid var(--bd);background:var(--sf);border-radius:19px;font-size:.8rem;cursor:pointer;color:var(--tx);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s;font-family:inherit}
+    .share-btn:hover{border-color:var(--c1);color:var(--c1);background:rgba(200,85,61,.05)}
+    .share-btn.copied{border-color:var(--c3);color:var(--c3);background:rgba(212,175,55,.08)}
+    .md-rel{margin-top:8px}
+    .rel-tl{font-size:.8rem;font-weight:700;color:var(--mt);margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em}
+    .rel-grd{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .rel-cr{background:var(--bg);border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid var(--bd);transition:transform .15s,box-shadow .15s}
+    .rel-cr:hover{transform:translateY(-2px);box-shadow:0 4px 12px var(--sh)}
+    .rel-ci{height:70px;overflow:hidden;position:relative;background:linear-gradient(135deg,#f5e6d3,#e8d5c4)}
+    .rel-ci img{width:100%;height:100%;object-fit:cover}
+    .rel-ci-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+    .rel-cb{padding:8px 10px}
+    .rel-cn{font-size:.8rem;font-weight:700;font-family:"Songti SC",SimSun,serif;line-height:1.3;margin-bottom:2px}
+    .rel-cs{font-size:.7rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .md-nav{position:sticky;bottom:0;display:flex;gap:10px;padding:12px 20px;background:var(--sf);border-top:1px solid var(--bd);transition:background .3s}
+    .md-nav-btn{flex:1;height:38px;border:1.5px solid var(--bd);background:var(--sf);border-radius:19px;font-size:.8rem;cursor:pointer;color:var(--tx);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s}
+    .md-nav-btn:hover{border-color:var(--c1);color:var(--c1);background:rgba(200,85,61,.05)}
+    .md-nav-btn:disabled{opacity:.4;cursor:not-allowed}
+    .md-nav-btn:disabled:hover{border-color:var(--bd);color:var(--tx);background:var(--sf)}
+
+    /* ── Rating stars ── */
+    .rating-wrap{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+    .rating-stars{display:flex;gap:3px;font-size:1.3rem;color:var(--c3);cursor:pointer}
+    .rating-stars span{transition:transform .1s,color .1s}
+    .rating-stars span:hover{transform:scale(1.3)}
+    .rating-stars span.on{color:var(--c3)}
+    .rating-stars span.off{color:var(--bd)}
+    .rating-avg{font-size:.8rem;color:var(--mt)}
+    .rating-my{font-size:.75rem;color:var(--c1);font-weight:600;margin-left:auto}
+    .md-tag-effects{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .eff-tag{font-size:.78rem;padding:3px 10px;border-radius:12px;background:rgba(200,85,61,.08);color:var(--c1);border:1px solid rgba(200,85,61,.2)}
+
+    /* ── Festival bar ── */
+    .fstbar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 20px;background:var(--bg);border-bottom:1px solid var(--bd);align-items:center}
+    .fstbar-lbl{font-size:.75rem;color:var(--mt);font-weight:700;white-space:nowrap}
+    .fst-chip{padding:3px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;background:rgba(212,175,55,.08);color:var(--c3);border:1px solid rgba(212,175,55,.3);transition:all .12s;white-space:nowrap}
+    .fst-chip:hover{background:rgba(212,175,55,.2)}
+    .fst-chip.on{background:var(--c3);color:#fff}
+
+    /* ── Solar terms bar ── */
+    .stbar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 20px;background:var(--bg);border-bottom:1px solid var(--bd);align-items:center}
+    .stbar-lbl{font-size:.75rem;color:var(--mt);font-weight:700;white-space:nowrap}
+    .st-chip{padding:3px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;background:rgba(200,85,61,.08);color:var(--c1);border:1px solid rgba(200,85,61,.2);transition:all .12s;white-space:nowrap}
+    .st-chip:hover{background:rgba(200,85,61,.18)}
+    .st-chip.on{background:var(--c1);color:#fff}
+
+    /* ── Favorites page ── */
+    .fav-hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+    .fav-hdr h2{font-size:1.1rem;color:var(--tx)}
+    .fav-clr{background:transparent;border:1px solid var(--bd);border-radius:12px;padding:4px 12px;font-size:.75rem;color:var(--mt);cursor:pointer;transition:all .12s}
+    .fav-clr:hover{border-color:var(--c1);color:var(--c1)}
+    .fav-bk{background:transparent;border:none;color:var(--c1);font-size:.875rem;cursor:pointer;display:flex;align-items:center;gap:4px}
+    .fav-bk:hover{opacity:.8}
+
+    /* ── Share Modal ── */
+    .share-pop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+    .share-pop.on{display:flex}
+    .share-pop-inner{background:var(--sf);border-radius:16px;padding:24px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+    .share-pop-tl{font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--tx)}
+    .share-pop-url{width:100%;padding:10px 14px;background:var(--bg);border:1.5px solid var(--bd);border-radius:10px;font-size:.875rem;color:var(--tx);word-break:break-all;min-height:60px;margin-bottom:12px;font-family:inherit}
+    .share-pop-btn{width:100%;height:42px;background:var(--c1);color:#fff;border:none;border-radius:21px;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .15s}
+    .share-pop-btn:hover{background:#a8442e}
+    .share-pop-cb{width:100%;margin-top:8px;height:42px;background:var(--sf);border:1.5px solid var(--bd);border-radius:21px;font-size:.875rem;cursor:pointer;color:var(--tx);transition:all .12s}
+    .share-pop-cb:hover{border-color:var(--c3);color:var(--c3)}
+
+    @media(max-width:640px){
+      .sd{display:none}
+      .grd{grid-template-columns:repeat(2,1fr);gap:10px}
+      .mn{padding:14px}
+      .md-h{height:180px}
+      .rel-grd{grid-template-columns:repeat(2,1fr)}
+      .dly{flex-direction:column;gap:4px;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="dly" id="dly" role="button" tabindex="0" aria-label="每日推荐">
+  <span class="dly-lbl">今日推荐</span>
+  <span class="dly-txt" id="dlyTxt">加载中…</span>
+  <span class="dly-rhs" id="dlyRhs"></span>
+</div>
+<header class="hdr">
+  <div class="hdr-tl" id="hdrTl" title="回首页">🍜 中华<span>美食</span>千百道</div>
+  <div class="srch">
+    <span>🔍</span>
+    <input type="search" id="srch" placeholder="搜索菜名…" aria-label="搜索菜谱" autocomplete="off">
+    <div class="srch-hist" id="srchHist"></div>
+  </div>
+  <div class="hdr-actions">
+    <button class="hdr-music" id="musicBtn" title="背景音乐" aria-label="背景音乐">
+      <span class="music-icon">🎵</span>
+      <span class="music-waves"><span></span><span></span><span></span></span>
+    </button>
+    <button class="hdr-btn" id="favBtn" title="收藏夹" aria-label="收藏夹">
+      ❤️<span class="bdg" id="favBdg" style="display:none">0</span>
+    </button>
+    <button class="hdr-btn" id="themeBtn" title="切换主题" aria-label="切换深色模式">🌙</button>
+  </div>
+  <button class="btn-rnd" id="rnd">🎲 随便看看</button>
+</header>
+<div class="stbar" id="stbar">
+  <span class="stbar-lbl">🌱 节气</span>
+  <div id="stChips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div>
+<div class="fstbar" id="fstbar">
+  <span class="fstbar-lbl">🎊 节日</span>
+  <div id="fstChips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div>
+<div class="qbar" id="qbar">
+  <span class="qbar-lbl">👑 朝代</span>
+  <div class="qbar-eras" id="qbarEras"></div>
+  <span class="qbar-lbl" style="margin-left:8px">🍖 食材</span>
+  <div class="qbar-types" id="qbarTypes"></div>
+  <span class="qbar-lbl" style="margin-left:8px">🏆 菜系</span>
+  <div class="qbar-cuis" id="qbarCuis"></div>
+</div>
+<div class="hotbar" id="hotbar">
+  <span class="hotbar-lbl">🔥 热门</span>
+  <div id="hotTags" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  <div id="sortOpts" class="sort-opts" style="margin-left:auto">
+    <button class="srt-btn on" data-s="def">默认</button>
+    <button class="srt-btn" data-s="era">按朝代</button>
+    <button class="srt-btn" data-s="type">按类型</button>
+    <button class="srt-btn" data-s="rnd">随机</button>
+  </div>
+</div>
+<div class="ly">
+  <nav class="sd" id="sidebar" aria-label="四维筛选">
+    <!-- 朝代 -->
+    <button class="flt-hdr" id="fltEraHdr" aria-expanded="false">
+      <span class="flt-lbl">📅 朝代</span>
+      <span class="flt-count" id="eraCount">0</span>
+      <span class="arr">▾</span>
+    </button>
+    <div class="flt-body" id="fltEraBody"></div>
+    <!-- 食材种类 -->
+    <button class="flt-hdr" id="fltTypeHdr" aria-expanded="false">
+      <span class="flt-lbl">🐾 食材种类</span>
+      <span class="flt-count" id="typeCount">0</span>
+      <span class="arr">▾</span>
+    </button>
+    <div class="flt-body" id="fltTypeBody"></div>
+    <!-- 食材分类 -->
+    <button class="flt-hdr" id="fltCatHdr" aria-expanded="false">
+      <span class="flt-lbl">🌿 食材分类</span>
+      <span class="flt-count" id="catCount">0</span>
+      <span class="arr">▾</span>
+    </button>
+    <div class="flt-body" id="fltCatBody"></div>
+    <!-- 搜索关键词 -->
+    <button class="flt-hdr" id="fltSrcHdr" aria-expanded="false">
+      <span class="flt-lbl">🔤 关键词</span>
+      <span class="flt-count" id="srcCount">0</span>
+      <span class="arr">▾</span>
+    </button>
+    <div class="flt-body" id="fltSrcBody"></div>
+    <!-- 功效分类 -->
+    <button class="flt-hdr" id="fltEffHdr" aria-expanded="false">
+      <span class="flt-lbl">💊 功效分类</span>
+      <span class="flt-count" id="effCount">0</span>
+      <span class="arr">▾</span>
+    </button>
+    <div class="flt-body" id="fltEffBody"></div>
+  </nav>
+  <main class="mn" id="main">
+    <!-- Active filter tags -->
+    <div class="tags-bar" id="tagsBar"></div>
+    <div class="mn-ttl" id="cnt">加载中…</div>
+    <div class="grd" id="grid" role="list"></div>
+    <div class="emp" id="emp" style="display:none"><div class="ic">🍽️</div><p>未找到相关菜谱</p></div>
+  </main>
+</div>
+<div class="mb" id="mb" role="dialog" aria-modal="true" aria-label="菜谱详情">
+  <div class="md" id="md">
+    <div class="md-cls"><span class="md-id" id="mdId"></span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="hdr-btn" id="mdFav" title="收藏" style="width:32px;height:32px;font-size:1rem">🤍</button>
+        <button class="md-x" id="mdX" aria-label="关闭">✕</button>
+      </div>
+    </div>
+    <div class="md-h" id="mdH"></div>
+    <div class="md-bd" id="mdBd"></div>
+    <div class="md-nav">
+      <button class="md-nav-btn" id="mdPrev">← 上一道</button>
+      <button class="md-nav-btn" id="mdNext">下一道 →</button>
+    </div>
+  </div>
+</div>
+<!-- Share popup -->
+<div class="share-pop" id="sharePop">
+  <div class="share-pop-inner">
+    <div class="share-pop-tl">🍜 分享菜谱</div>
+    <textarea class="share-pop-url" id="shareTxt" rows="3" readonly></textarea>
+    <button class="share-pop-btn" id="copyBtn">复制分享文字</button>
+    <button class="share-pop-cb" id="shareWb">📤 分享到微博</button>
+    <div style="text-align:center;margin-top:10px"><button class="fav-bk" id="closeShare" style="font-size:.8rem">取消</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+
+  // ── Persistence ──
+  const LS_THEME = 'cbr_theme';
+  const LS_FAVS  = 'cbr_favs';
+  const LS_DLY   = 'cbr_dly_date';
+  const LS_DLY_ID= 'cbr_dly_id';
+  const LS_HIST  = 'cbr_hist';
+  const LS_MUSIC = 'cbr_music';
+  const LS_RAT   = 'cbr_ratings';
+  const SOLAR_TERMS = {
+    '立春':'2月3-5日','雨水':'2月18-20日','惊蛰':'3月5-7日','春分':'3月20-22日',
+    '清明':'4月4-6日','谷雨':'4月19-21日','立夏':'5月5-7日','小满':'5月20-22日',
+    '芒种':'6月5-7日','夏至':'6月21-22日','小暑':'7月6-8日','大暑':'7月22-24日',
+    '立秋':'8月7-9日','处暑':'8月22-24日','白露':'9月7-9日','秋分':'9月22-24日',
+    '寒露':'10月8-9日','霜降':'10月23-24日','立冬':'11月7-8日','小雪':'11月22-23日',
+    '大雪':'12月6-8日','冬至':'12月21-23日','小寒':'1月5-7日','大寒':'1月20-21日'
+  };
+  const FESTIVALS = {
+    '春节':'农历正月初一','除夕':'农历腊月三十','元宵节':'农历正月十五',
+    '龙抬头':'农历二月初二','端午节':'农历五月初五','七夕节':'农历七月初七',
+    '中秋节':'农历八月十五','重阳节':'农历九月初九','腊八节':'农历腊月初八'
+  };
+  let RATINGS = load(LS_RAT,{});
+  let curSolarTerm = '';
+  let curFestival = '';
+  let selEffects = [];
+
+  function save(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+  function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch(e){ return def; } }
+
+  // ── Dark mode ──
+  function applyTheme(dark){
+    document.documentElement.dataset.theme = dark ? 'dark' : '';
+    document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
+    save(LS_THEME, dark);
+  }
+  document.getElementById('themeBtn').onclick = () => applyTheme(!load(LS_THEME,false));
+  applyTheme(load(LS_THEME,false));
+
+  // ── Favorites ──
+  let FAVS = load(LS_FAVS,[]);
+  function saveFavs(){ save(LS_FAVS,FAVS); updateFavBdg(); }
+  function updateFavBdg(){
+    const n = FAVS.length;
+    const b = document.getElementById('favBdg');
+    b.textContent = n; b.style.display = n ? 'flex' : 'none';
+  }
+  updateFavBdg();
+
+  function toggleFav(id){
+    const i = FAVS.indexOf(id);
+    if(i>=0){ FAVS.splice(i,1); } else { FAVS.push(id); }
+    saveFavs();
+    if(curView==='favs') renderFavs();
+    else if(mb.classList.contains('on')) updateMdFavBtn(id);
+    updateCardFav(id);
+  }
+  function isFaved(id){ return FAVS.includes(id); }
+  function updateCardFav(id){
+    document.querySelectorAll('.card[data-id="'+id+'"]').forEach(c=>{
+      c.classList.toggle('faved',isFaved(id));
+    });
+  }
+  function updateMdFavBtn(id){
+    document.getElementById('mdFav').textContent = isFaved(id) ? '❤️' : '🤍';
+  }
+
+  // ── Search history ──
+  let HIST = load(LS_HIST,[]);
+  function addHist(q){
+    if(!q||q.length<2) return;
+    HIST = HIST.filter(h=>h!==q);
+    HIST.unshift(q);
+    HIST = HIST.slice(0,5);
+    save(LS_HIST,HIST);
+    renderHist();
+  }
+  function renderHist(){
+    const el = document.getElementById('srchHist');
+    if(!HIST.length){ el.classList.remove('on'); return; }
+    el.innerHTML = HIST.map(h=>`<div class="srch-hi" data-q="${h}">🔍 ${h}</div>`).join('');
+    el.querySelectorAll('.srch-hi').forEach(div=>{
+      div.onclick = ()=>{
+        const q = div.dataset.q;
+        document.getElementById('srch').value = q;
+        curQ = q;
+        apply();
+        el.classList.remove('on');
+      };
+    });
+  }
+  const srchEl = document.getElementById('srch');
+  const srchHistEl = document.getElementById('srchHist');
+  srchEl.addEventListener('focus',()=>{ if(HIST.length) srchHistEl.classList.add('on'); });
+  srchEl.addEventListener('blur',()=>{ setTimeout(()=>srchHistEl.classList.remove('on'),200); });
+  srchEl.addEventListener('input',()=>{
+    const q = srchEl.value.trim().toLowerCase();
+    if(!q){ srchHistEl.classList.remove('on'); srchHistEl.innerHTML=''; return; }
+    // Smart suggestion: match recipe names
+    const matches = DATA.filter(d=>d.name.toLowerCase().includes(q)).slice(0,8);
+    const icon = d=>CAT_ICONS[d.category]||'🍽️';
+    let html = matches.map(d=>{
+      const nm = d.name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<mark>$1</mark>');
+      return `<div class="srch-hi" data-q="${d.name}" data-id="${d.id}">${icon(d)} ${nm}<span style="margin-left:auto;font-size:.7rem;color:var(--mt)">${d.era.split('·')[0]}</span></div>`;
+    }).join('');
+    if(matches.length){ html += `<div class="srch-hi" style="color:var(--mt);font-size:.75rem;border-top:1px solid var(--bd)" id="srchApply">↩ 搜索 "${srchEl.value}"（${matches.length}道）</div>`; }
+    srchHistEl.innerHTML = html;
+    srchHistEl.classList.add('on');
+    srchHistEl.querySelectorAll('.srch-hi[data-q]').forEach(div=>{
+      div.onclick = ()=>{
+        srchEl.value = div.dataset.q;
+        curQ = div.dataset.q;
+        addHist(curQ); renderHist(); apply();
+        srchHistEl.classList.remove('on');
+      };
+    });
+    const applyBtn = document.getElementById('srchApply');
+    if(applyBtn) applyBtn.onclick = ()=>{ curQ=srchEl.value.toLowerCase(); addHist(curQ); renderHist(); apply(); srchHistEl.classList.remove('on'); };
+  });
+
+  // ── Quick bar builders ──
+  function buildQuickBar(){
+    // Era quick chips
+    const eraCnt = {};
+    DATA.forEach(d=>{ eraCnt[d.era]=(eraCnt[d.era]||0)+1; });
+    const qe = document.getElementById('qbarEras');
+    qe.innerHTML = ERAS.filter(e=>e!=='全部').map(era=>{
+      const c=eraCnt[era]||0;
+      const on=selEras.includes(era);
+      const color=ERA_COLORS[era]||'var(--c1)';
+      return `<button class="qchip${on?' on':''}" data-era="${era}" style="${on?`background:${color};border-color:${color}`:''}">${era.split('·')[0]}${era.includes('（')?'':era.split('·').slice(1).join('')}<span class="qnum">${c}</span></button>`;
+    }).join('');
+    qe.querySelectorAll('.qchip').forEach(b=>{
+      b.onclick = ()=>{
+        const era=b.dataset.era;
+        const on=selEras.includes(era);
+        if(on){ selEras=selEras.filter(e=>e!==era); if(!selEras.length) selEras=['全部']; }
+        else { selEras=selEras.filter(e=>e!=='全部'); selEras.push(era); }
+        buildQuickBar(); apply();
+      };
+    });
+
+    // Type quick chips
+    const qt = document.getElementById('qbarTypes');
+    qt.innerHTML = Object.keys(TYPE_MAP).map(type=>{
+      const cats=TYPE_MAP[type];
+      const cnt=cats.reduce((s,c)=>s+(CATS[c]?CATS[c].length:0),0);
+      if(!cnt) return '';
+      const on=selTypes.includes(type);
+      return `<button class="qchip${on?' on':''}" data-type="${type}">${TYPE_ICONS[type]} ${type.split(' ')[1]}<span class="qnum">${cnt}</span></button>`;
+    }).join('');
+    qt.querySelectorAll('.qchip').forEach(b=>{
+      b.onclick = ()=>{
+        const type=b.dataset.type;
+        const on=selTypes.includes(type);
+        if(on) selTypes=selTypes.filter(t=>t!==type);
+        else selTypes.push(type);
+        buildQuickBar(); apply();
+      };
+    });
+
+    // Cuisine quick chips
+    const cuisineCnt = {};
+    DATA.forEach(d=>{ const c=d.cuisine||'地方菜'; cuisineCnt[c]=(cuisineCnt[c]||0)+1; });
+    const CUISINE_COLORS = {'川菜':'#E53935','粤菜':'#FDD835','鲁菜':'#8D6E63','苏菜':'#66BB6A','浙菜':'#26C6DA','闽菜':'#AB47BC','湘菜':'#FF7043','徽菜':'#D4AF37','京菜':'#795548','东北菜':'#607D8B','官府菜':'#9E9E9E','宫廷菜':'#D4AF37','蒙古菜':'#8D6E63','素菜':'#43A047','地方菜':'#8D8D8D'};
+    const qc = document.getElementById('qbarCuis');
+    const sortedCuisines = Object.keys(cuisineCnt).sort((a,b)=>cuisineCnt[b]-cuisineCnt[a]);
+    qc.innerHTML = sortedCuisines.map(cuisine=>{
+      const c=cuisineCnt[cuisine]||0;
+      const on=selCuisines.includes(cuisine);
+      const color=CUISINE_COLORS[cuisine]||'var(--c1)';
+      return `<button class="qchip${on?' on':''}" data-cuisine="${cuisine}" style="${on?`background:${color};border-color:${color}`:''}">${cuisine}<span class="qnum">${c}</span></button>`;
+    }).join('');
+    qc.querySelectorAll('.qchip').forEach(b=>{
+      b.onclick = ()=>{
+        const cuisine=b.dataset.cuisine;
+        const on=selCuisines.includes(cuisine);
+        if(on) selCuisines=selCuisines.filter(c=>c!==cuisine);
+        else selCuisines.push(cuisine);
+        buildQuickBar(); apply();
+      };
+    });
+
+    // Hot tags
+    const ht = document.getElementById('hotTags');
+    ht.innerHTML = HOT_WORDS.map(w=>`<button class="hot-tag" data-w="${w}">${w}</button>`).join('');
+    ht.querySelectorAll('.hot-tag').forEach(b=>{
+      b.onclick = ()=>{
+        srchEl.value=b.dataset.w; curQ=b.dataset.w; addHist(curQ); renderHist(); apply();
+      };
+    });
+
+    // Sort buttons
+    document.querySelectorAll('.srt-btn').forEach(b=>{
+      b.onclick = ()=>{
+        document.querySelectorAll('.srt-btn').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        curSort=b.dataset.s;
+        apply();
+      };
+    });
+
+    // Solar terms chips
+    const stEl = document.getElementById('stChips');
+    stEl.innerHTML = Object.keys(SOLAR_TERMS).map(st=>{
+      return `<button class="st-chip${curSolarTerm===st?' on':''}" data-st="${st}">${st}<span style="font-size:.65rem;opacity:.8;margin-left:3px">${SOLAR_TERMS[st]}</span></button>`;
+    }).join('');
+    stEl.querySelectorAll('.st-chip').forEach(b=>{
+      b.onclick = ()=>{
+        const st=b.dataset.st;
+        curSolarTerm = (curSolarTerm===st) ? '' : st;
+        buildQuickBar(); apply();
+      };
+    });
+
+    // Festival chips
+    const fstEl = document.getElementById('fstChips');
+    fstEl.innerHTML = Object.keys(FESTIVALS).map(fst=>{
+      return `<button class="fst-chip${curFestival===fst?' on':''}" data-fst="${fst}">${fst}</button>`;
+    }).join('');
+    fstEl.querySelectorAll('.fst-chip').forEach(b=>{
+      b.onclick = ()=>{
+        const fst=b.dataset.fst;
+        curFestival = (curFestival===fst) ? '' : fst;
+        buildQuickBar(); apply();
+      };
+    });
+  }
+
+  // ── Sort state ──
+  let curSort = 'def';
+  let showCover = true;  // show era cover on clean state
+  function getSorted(arr){
+    if(curSort==='def') return arr;
+    if(curSort==='era') return [...arr].sort((a,b)=>a.era.localeCompare(b.era));
+    if(curSort==='type') return [...arr].sort((a,b)=>a.category.localeCompare(b.category));
+    if(curSort==='rnd') return [...arr].sort(()=>Math.random()-.5);
+    return arr;
+  }
+
+  // ── Era cover view ──
+  function showEraCover(){
+    const eraCnt={};
+    DATA.forEach(d=>{ eraCnt[d.era]=(eraCnt[d.era]||0)+1; });
+    const ERA_ICONS={'先秦·汉·魏晋':'🎋','唐代':'🍃','元代':'🏮','唐代（续）':'🍃','宋代':'🌸','宋代（续）':'🌸','明代':'🏛️','清代':'🎎','近代·现代':'🚂'};
+    const coverHtml = `<div class="era-cover" id="eraCover">${
+      ERAS.filter(e=>e!=='全部').map(era=>{
+        const c=eraCnt[era]||0;
+        const col=ERA_COLORS[era]||'var(--c1)';
+        const icon=ERA_ICONS[era]||'🍽️';
+        return `<div class="era-card" data-era="${era}" style="background:${col}">
+          <div class="era-icon">${icon}</div>
+          <div class="era-nm">${era}</div>
+          <div class="era-ct">${c}道经典美食</div>
+          <div class="era-badge">点击探索 →</div>
+        </div>`;
+      }).join('')
+    }</div>`;
+    return coverHtml;
+  }
+
+  // ── Strip markdown ──
+  function stripMd(text){
+    if(!text) return '';
+    return text.replace(/^#{1,6}\s+/gm,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1').replace(/^[-*+]\s+/gm,'').replace(/^\d+\.\s+/gm,'').replace(/`(.+?)`/g,'$1').replace(/\n{3,}/g,'\n\n').trim();
+  }
+
+  // ── Clean source ──
+  function cleanSource(text){
+    if(!text) return '';
+    const m = text.match(/《([^》]+)》/);
+    if(m) return '《'+m[1]+'》';
+    const first = text.split('\n')[0].trim();
+    return stripMd(first).substring(0,30);
+  }
+
+  // ── Highlight key phrases in history ──
+  function highlightHistory(text){
+    if(!text) return '';
+    return stripMd(text).replace(/(重要|著名|珍贵|独特|秘方|传统|经典|宫廷|御用|养生|药膳)/g,'<strong>$1</strong>');
+  }
+
+  // ── State ──
+  let DATA = [], CATS = {}, filtered = [], mIdx = -1;
+  // v0.4: 多选状态
+  let selEras = [];   // 已选朝代
+  let selTypes = [];  // 已选食材种类（顶级分类）
+  let selCats = [];   // 已选食材分类（子类）
+  let selCuisines = [];  // 已选菜系
+  let curQ = '';
+  let curView = 'main';
+  const mainEl = document.getElementById('main');
+  const mb = document.getElementById('mb');
+  const sidebar = document.getElementById('sidebar');
+
+  // 食材种类 = 顶级分类（肉类/蔬菜/主食等）
+  const TYPE_MAP = {
+    '🐷 肉类':['🐷 猪肉类','🐂 牛肉类','🐑 羊肉类','🐔 鸡肉类','🦆 鸭肉类','🦢 鹅肉类'],
+    '🐟 水产':['🐟 鱼类','🦐 虾蟹类','🦀 蟹类','🦑 海参鲍鱼类','🦑 贝类'],
+    '🥬 蔬菜':['🥬 蔬菜类','🥒 瓜类','🍅 茄果类','🌶️ 辛香类','🧅 辛香类','🍠 根茎类','🥕 根茎类','🎋 菌笋类','🍄 菌笋类'],
+    '🍚 主食':['🍚 米面主食类','🍜 米面主食类','🥟 米面主食类','🥖 米面主食类'],
+    '🧈 副食':['🧈 豆制品类','🥚 蛋类','🩸 内脏血类'],
+    '🍲 汤羹':['🍲 汤羹类'],
+    '🍰 甜点':['🍰 甜品糕点类','🍬 糖果蜜饯类'],
+    '🍶 酒饮':['🍶 酒类'],
+    '🍽️ 其他':['🍽️ 其他'],
+  };
+  const TYPE_ICONS = {
+    '🐷 肉类':'🐷','🐟 水产':'🐟','🥬 蔬菜':'🥬',
+    '🍚 主食':'🍚','🧈 副食':'🧈','🍲 汤羹':'🍲',
+    '🍰 甜点':'🍰','🍶 酒饮':'🍶','🍽️ 其他':'🍽️'
+  };
+  const CAT_ICONS={
+    '🐷 猪肉类':'🐷','🐂 牛肉类':'🐂','🐑 羊肉类':'🐑','🐔 鸡肉类':'🐔',
+    '🦆 鸭肉类':'🦆','🦢 鹅肉类':'🦢','🐟 鱼类':'🐟','🦐 虾蟹类':'🦐',
+    '🦀 蟹类':'🦀','🦑 海参鲍鱼类':'🦑','🦑 贝类':'🦑',
+    '🥬 蔬菜类':'🥬','🥒 瓜类':'🥒','🍅 茄果类':'🍅','🌶️ 辛香类':'🌶️',
+    '🧅 辛香类':'🧅','🍠 根茎类':'🍠','🥕 根茎类':'🥕',
+    '🎋 菌笋类':'🎋','🍄 菌笋类':'🍄',
+    '🧈 豆制品类':'🧈','🥚 蛋类':'�蛋','🍚 米面主食类':'🍚',
+    '🍜 米面主食类':'🍜','🥟 米面主食类':'🥟','🥖 米面主食类':'🥖',
+    '🍲 汤羹类':'🍲','🍰 甜品糕点类':'🍰','🍬 糖果蜜饯类':'🍬',
+    '🩸 内脏血类':'🩸','🍶 酒类':'🍶','🍽️ 其他':'🍽️'
+  };
+  const ERA_COLORS={
+    '先秦·汉·魏晋':'#6b4c11',
+    '唐代':'#8b4513',
+    '元代':'#2f5d62',
+    '唐代（续）':'#8b4513',
+    '宋代':'#2d6a4f',
+    '宋代（续）':'#2d6a4f',
+    '明代':'#1d3557',
+    '清代':'#641e34',
+    '近代·现代':'#c8553d',
+  };
+  const ERAS=['全部','先秦·汉·魏晋','唐代','元代','宋代','明代','清代','近代·现代'];
+
+  // 热词
+  const HOT_WORDS=['佛跳墙','东坡肉','北京烤鸭','麻婆豆腐','清蒸鲈鱼','糖醋里脊','宫保鸡丁','鱼香肉丝','红烧肉','小笼包'];
+
+  // ── Skeleton ──
+  function showSk(){
+    const g = document.getElementById('grid');
+    if(g) g.innerHTML = Array.from({length:12},()=>`<div class="sk"><div class="sk-img"></div><div class="sk-tx"><div class="sk-l"></div><div class="sk-s"></div></div></div>`).join('');
+  }
+
+  // ── Build era filter ──
+  function buildEraFilter(){
+    const body = document.getElementById('fltEraBody');
+    const eraCnt = {};
+    DATA.forEach(d=>{ eraCnt[d.era]=(eraCnt[d.era]||0)+1; });
+    body.innerHTML = '';
+    ERAS.forEach(era=>{
+      const c = era==='全部' ? DATA.length : (eraCnt[era]||0);
+      if(c===0 && era!=='全部') return;
+      const lbl = document.createElement('label');
+      lbl.innerHTML=`<input type="checkbox" data-era="${era}"><span>${era}</span><span class="lnum">${c}</span>`;
+      lbl.querySelector('input').checked = selEras.includes(era);
+      lbl.querySelector('input').onchange = ()=>toggleEra(era,lbl.querySelector('input').checked);
+      body.appendChild(lbl);
+    });
+  }
+
+  function toggleEra(era,on){
+    if(era==='全部'){ selEras=on?[era]:[]; }
+    else {
+      selEras=selEras.filter(e=>e!=='全部');
+      if(on) selEras.push(era); else selEras=selEras.filter(e=>e!==era);
+      if(!selEras.length) selEras=['全部'];
+    }
+    // update checkboxes
+    document.querySelectorAll('#fltEraBody input').forEach(inp=>{
+      inp.checked = selEras.includes(inp.dataset.era);
+    });
+    updateFilterCount('era');
+    apply();
+  }
+
+  // ── Build type filter ──
+  function buildTypeFilter(){
+    const body = document.getElementById('fltTypeBody');
+    body.innerHTML = '';
+    Object.keys(TYPE_MAP).forEach(type=>{
+      const cats = TYPE_MAP[type];
+      const cnt = cats.reduce((s,c)=>s+(CATS[c]?CATS[c].length:0),0);
+      if(cnt===0) return;
+      const lbl = document.createElement('label');
+      lbl.innerHTML=`<input type="checkbox" data-type="${type}"><span>${TYPE_ICONS[type]} ${type.split(' ')[1]}</span><span class="lnum">${cnt}</span>`;
+      lbl.querySelector('input').checked = selTypes.includes(type);
+      lbl.querySelector('input').onchange = ()=>toggleType(type,lbl.querySelector('input').checked);
+      body.appendChild(lbl);
+    });
+  }
+
+  function toggleType(type,on){
+    if(on) selTypes.push(type); else selTypes=selTypes.filter(t=>t!==type);
+    // auto toggle sub-cats
+    const cats = TYPE_MAP[type]||[];
+    cats.forEach(cat=>{
+      const chk = document.querySelector(`#fltCatBody input[data-cat="${cat}"]`);
+      if(chk) chk.checked = on;
+    });
+    updateFilterCount('type');
+    updateFilterCount('cat');
+    apply();
+  }
+
+  // ── Build cat filter ──
+  function buildCatFilter(){
+    const body = document.getElementById('fltCatBody');
+    body.innerHTML = '';
+    const catList = Object.entries(CATS).sort((a,b)=>b[1].length-a[1].length);
+    catList.forEach(([cat,arr])=>{
+      if(arr.length===0) return;
+      const lbl = document.createElement('label');
+      lbl.innerHTML=`<input type="checkbox" data-cat="${cat}"><span>${CAT_ICONS[cat]||'🍽️'} ${cat.split(' ')[1]||cat}</span><span class="lnum">${arr.length}</span>`;
+      lbl.querySelector('input').checked = selCats.includes(cat);
+      lbl.querySelector('input').onchange = ()=>toggleCat(cat,lbl.querySelector('input').checked);
+      body.appendChild(lbl);
+    });
+  }
+
+  function toggleCat(cat,on){
+    if(on) selCats.push(cat); else selCats=selCats.filter(c=>c!==cat);
+    updateFilterCount('cat');
+    apply();
+  }
+
+  // ── Build search/keyword filter ──
+  function buildSrcFilter(){
+    const body = document.getElementById('fltSrcBody');
+    body.innerHTML = '';
+    HOT_WORDS.forEach(w=>{
+      const lbl = document.createElement('label');
+      lbl.innerHTML=`<input type="checkbox" data-word="${w}"><span>🔸 ${w}</span>`;
+      lbl.querySelector('input').checked = curQ===w;
+      lbl.querySelector('input').onchange = ()=>toggleWord(w,lbl.querySelector('input').checked);
+      body.appendChild(lbl);
+    });
+  }
+
+  function buildEffFilter(){
+    const ALL_EFFECTS = ['高蛋白','高纤维','补气','补虚','滋阴','清热','健脾','驱寒','活血','养血','润肺','明目','降火','利尿','美容'];
+    const body = document.getElementById('fltEffBody');
+    body.innerHTML = '';
+    ALL_EFFECTS.forEach(eff=>{
+      const lbl = document.createElement('label');
+      lbl.innerHTML=`<input type="checkbox" data-eff="${eff}"><span>💊 ${eff}</span>`;
+      lbl.querySelector('input').checked = selEffects.includes(eff);
+      lbl.querySelector('input').onchange = ()=>toggleEff(eff,lbl.querySelector('input').checked);
+      body.appendChild(lbl);
+    });
+    document.getElementById('fltEffHdr').onclick = ()=>{
+      const expanded = document.getElementById('fltEffHdr').getAttribute('aria-expanded')==='true';
+      document.getElementById('fltEffHdr').setAttribute('aria-expanded',!expanded);
+      document.getElementById('fltEffBody').style.display = expanded?'none':'block';
+    };
+  }
+
+  function toggleEff(eff,on){
+    if(on) selEffects.push(eff);
+    else selEffects=selEffects.filter(e=>e!==eff);
+    document.getElementById('effCount').textContent=selEffects.length;
+    apply();
+  }
+
+  function toggleWord(w,on){
+    const btn = document.getElementById('srch');
+    if(on){
+      btn.value = w;
+      curQ = w;
+    } else {
+      btn.value = '';
+      curQ = '';
+    }
+    // sync checkboxes
+    document.querySelectorAll('#fltSrcBody input').forEach(inp=>{
+      inp.checked = inp.dataset.word===curQ;
+    });
+    updateFilterCount('src');
+    apply();
+  }
+
+  // ── Toggle filter panels ──
+  function setupFilterPanel(hdrId,bodyId){
+    const hdr = document.getElementById(hdrId);
+    const body = document.getElementById(bodyId);
+    hdr.onclick = ()=>{
+      const isOn = hdr.classList.contains('on');
+      hdr.classList.toggle('on');
+      hdr.setAttribute('aria-expanded',!isOn);
+      body.classList.toggle('on');
+    };
+  }
+  setupFilterPanel('fltEraHdr','fltEraBody');
+  setupFilterPanel('fltTypeHdr','fltTypeBody');
+  setupFilterPanel('fltCatHdr','fltCatBody');
+  setupFilterPanel('fltSrcHdr','fltSrcBody');
+
+  // ── Update count badges ──
+  function updateFilterCount(type){
+    if(type==='era') document.getElementById('eraCount').textContent = selEras.length&&selEras[0]!=='全部' ? selEras.length : 0;
+    if(type==='type') document.getElementById('typeCount').textContent = selTypes.length;
+    if(type==='cat') document.getElementById('catCount').textContent = selCats.length;
+    if(type==='src') document.getElementById('srcCount').textContent = curQ ? 1 : 0;
+    if(type==='effect') document.getElementById('effCount').textContent = selEffects.length;
+  }
+
+  // ── Tags bar ──
+  function renderTags(){
+    const bar = document.getElementById('tagsBar');
+    let html = '';
+    selEras.filter(e=>e!=='全部').forEach(e=>{
+      html += `<span class="tag tag-e" data-type="era" data-val="${e}">📅 ${e} <span class="tag-x">×</span></span>`;
+    });
+    selTypes.forEach(t=>{
+      html += `<span class="tag tag-t" data-type="type" data-val="${t}">${TYPE_ICONS[t]} ${t.split(' ')[1]} <span class="tag-x">×</span></span>`;
+    });
+    selCats.forEach(c=>{
+      html += `<span class="tag tag-c" data-type="cat" data-val="${c}">${CAT_ICONS[c]||'🍽️'} ${c.split(' ')[1]||c} <span class="tag-x">×</span></span>`;
+    });
+    selCuisines.forEach(c=>{
+      html += `<span class="tag" style="background:var(--c3);color:var(--tx2)" data-type="cuisine" data-val="${c}">🏆 ${c} <span class="tag-x">×</span></span>`;
+    });
+    if(curSolarTerm){
+      html += `<span class="tag" style="background:var(--c1);color:#fff" data-type="solarterm">🌱 ${curSolarTerm} <span class="tag-x">×</span></span>`;
+    }
+    if(curFestival){
+      html += `<span class="tag" style="background:var(--c3);color:var(--tx2)" data-type="festival">🎊 ${curFestival} <span class="tag-x">×</span></span>`;
+    }
+    selEffects.forEach(e=>{
+      html += `<span class="tag" style="background:var(--c2);color:var(--tx2)" data-type="effect" data-val="${e}">💊 ${e} <span class="tag-x">×</span></span>`;
+    });
+    if(curQ){
+      html += `<span class="tag tag-s" data-type="q">🔤 ${curQ} <span class="tag-x">×</span></span>`;
+    }
+    if(html){
+      html += `<button class="clr-all" id="clrAll">✕ 清除全部</button>`;
+    }
+    bar.innerHTML = html;
+    bar.querySelectorAll('.tag').forEach(t=>{
+      t.onclick = ()=>{
+        const type = t.dataset.type;
+        const val = t.dataset.val;
+        if(type==='era'){ selEras=selEras.filter(e=>e!==val); if(!selEras.length) selEras=['全部']; document.querySelectorAll('#fltEraBody input').forEach(i=>i.checked=selEras.includes(i.dataset.era)); updateFilterCount('era'); }
+        else if(type==='type'){ selTypes=selTypes.filter(t2=>t2!==val); document.querySelectorAll('#fltTypeBody input').forEach(i=>i.checked=selTypes.includes(i.dataset.type)); updateFilterCount('type'); }
+        else if(type==='cat'){ selCats=selCats.filter(c2=>c2!==val); document.querySelectorAll('#fltCatBody input').forEach(i=>i.checked=selCats.includes(i.dataset.cat)); updateFilterCount('cat'); }
+        else if(type==='cuisine'){ selCuisines=selCuisines.filter(c2=>c2!==val); buildQuickBar(); }
+        else if(type==='solarterm'){ curSolarTerm=''; document.querySelectorAll('#stChips .st-chip').forEach(c=>c.classList.toggle('on',false)); }
+        else if(type==='festival'){ curFestival=''; document.querySelectorAll('#fstChips .fst-chip').forEach(c=>c.classList.toggle('on',false)); }
+        else if(type==='effect'){ selEffects=selEffects.filter(e2=>e2!==val); }
+        else if(type==='q'){ curQ=''; document.getElementById('srch').value=''; document.querySelectorAll('#fltSrcBody input').forEach(i=>i.checked=false); updateFilterCount('src'); }
+        apply();
+      };
+    });
+    const clr = document.getElementById('clrAll');
+    if(clr) clr.onclick = ()=>{ clearAll(); apply(); };
+  }
+
+  function clearAll(){
+    selEras=['全部']; selTypes=[]; selCats=[]; selCuisines=[]; curQ=''; curSolarTerm=''; curFestival=''; selEffects=[];
+    showCover=true;
+    document.getElementById('srch').value='';
+    document.querySelectorAll('#fltEraBody input').forEach(i=>i.checked=i.dataset.era==='全部');
+    document.querySelectorAll('#fltTypeBody input').forEach(i=>i.checked=false);
+    document.querySelectorAll('#fltCatBody input').forEach(i=>i.checked=false);
+    document.querySelectorAll('#fltSrcBody input').forEach(i=>i.checked=false);
+    updateFilterCount('era'); updateFilterCount('type'); updateFilterCount('cat'); updateFilterCount('src');
+  }
+
+  // ── Apply filter ──
+  function apply(){
+    const q = curQ.toLowerCase();
+    filtered = DATA.filter(d=>{
+      // keyword search
+      const okQ = !q || d.name.toLowerCase().includes(q) || (d.source&&d.source.toLowerCase().includes(q));
+      // era filter (OR among selected)
+      let okE = true;
+      if(selEras.length && selEras[0]!=='全部'){
+        okE = selEras.includes(d.era);
+      }
+      // type filter (OR — any sub-cat matches)
+      let okT = true;
+      if(selTypes.length){
+        okT = selTypes.some(t=>{
+          const sub = TYPE_MAP[t]||[];
+          return sub.includes(d.category);
+        });
+      }
+      // cat filter (OR among selected)
+      let okC = true;
+      if(selCats.length){
+        okC = selCats.includes(d.category);
+      }
+      // cuisine filter (OR among selected)
+      let okCu = true;
+      if(selCuisines.length){
+        okCu = selCuisines.includes(d.cuisine||'地方菜');
+      }
+      // solar term filter
+      let okSt = true;
+      if(curSolarTerm && !d.tips.includes(curSolarTerm) && !d.name.includes(curSolarTerm) && !d.history?.includes(curSolarTerm) && !d.category.includes(curSolarTerm)){
+        okSt = false;
+      }
+      // festival filter
+      let okFst = true;
+      if(curFestival && !d.tips.includes(curFestival) && !d.name.includes(curFestival)){
+        okFst = false;
+      }
+      // effects filter (OR — any selected effect matches)
+      let okEf = true;
+      if(selEffects.length){
+        okEf = selEffects.some(e=>(d.effects||[]).includes(e));
+      }
+      return okQ && okE && okT && okC && okCu && okSt && okFst && okEf;
+    });
+    // Show era cover when no filters active (clean state)
+    showCover = !curQ && selEras[0]==='全部' && !selTypes.length && !selCats.length && !selCuisines.length && !curSolarTerm && !curFestival && !selEffects.length;
+    renderTags();
+    render();
+  }
+
+  // ── Daily recommended ──
+  function initDaily(){
+    const today = new Date().toDateString();
+    let dlyId = load(LS_DLY_ID,null);
+    if(load(LS_DLY)===today && dlyId && DATA.length){
+      const d = DATA.find(x=>x.id===dlyId);
+      if(d){ showDly(d); return; }
+    }
+    if(DATA.length){
+      const d = DATA[Math.floor(Math.random()*DATA.length)];
+      save(LS_DLY,today); save(LS_DLY_ID,d.id);
+      showDly(d);
+    }
+  }
+  function showDly(d){
+    document.getElementById('dlyTxt').textContent = `「${d.name}」— ${cleanSource(d.source)||'中华美食'}`;
+    document.getElementById('dlyRhs').textContent = d.era;
+    document.getElementById('dly').onclick = ()=>{
+      const fi = DATA.findIndex(x=>x.id===d.id);
+      if(fi>=0) openM(fi);
+    };
+  }
+
+  // ── View ──
+  function setView(v){
+    curView=v;
+    if(v==='favs'){ sidebar.style.display='none'; renderFavs(); }
+    else { sidebar.style.display=''; render(); }
+  }
+
+  // ── Render favorites ──
+  function renderFavs(){
+    curView='favs';
+    mainEl.innerHTML=`<div class="tags-bar"></div><div class="fav-hdr"><button class="fav-bk" id="bkBtn">← 返回</button><h2>❤️ 我的收藏</h2><span style="color:var(--mt);font-size:.875rem">${FAVS.length}道</span><button class="fav-clr" id="clrBtn">清空全部</button></div><div class="grd" id="grid2" role="list"></div><div class="emp" id="emp" style="display:${FAVS.length?'':'block'}"><div class="ic">💔</div><p>暂无收藏</p></div>`;
+    document.getElementById('bkBtn').onclick=()=>setView('main');
+    document.getElementById('clrBtn').onclick=()=>{ if(FAVS.length&&confirm('确定清空全部收藏？')){ FAVS=[]; saveFavs(); setView('main'); }};
+    const g2=document.getElementById('grid2');
+    if(!FAVS.length) return;
+    const favData=FAVS.map(id=>DATA.find(d=>d.id===id)).filter(Boolean);
+    favData.forEach(d=>{ g2.appendChild(makeCard(d,0)); });
+    document.getElementById('cnt').innerHTML=`❤️ 收藏 <strong>${FAVS.length}</strong> 道菜`;
+  }
+
+  // ── Render ──
+  function render(){
+    if(curView==='main'){
+      let topHtml = `<div class="tags-bar" id="tagsBar"></div>`;
+      // Era cover when no filters
+      if(showCover){
+        topHtml += showEraCover();
+      }
+      topHtml += `<div class="sortbar"><span class="sortbar-l" id="cnt"></span></div><div class="grd" id="grid" role="list"></div><div class="emp" id="emp" style="display:none"><div class="ic">🍽️</div><p>未找到相关菜谱</p></div>`;
+      mainEl.innerHTML = topHtml;
+
+      // Era card click handlers
+      document.querySelectorAll('.era-card').forEach(card=>{
+        card.onclick = ()=>{
+          const era = card.dataset.era;
+          selEras = [era];
+          buildQuickBar();
+          showCover = false;
+          apply();
+        };
+      });
+    }
+    const g = document.getElementById('grid')||document.getElementById('grid2');
+    const em = document.getElementById('emp');
+    const cEl = document.getElementById('cnt');
+    const displayList = getSorted(filtered);
+    cEl.innerHTML = curView==='favs' ? `❤️ 收藏 <strong>${FAVS.length}</strong> 道菜` : `共 <strong>${filtered.length}</strong> 道菜${curSort!=='def'?'（'+displayList.length+'已排序）':''}`;
+    renderTags();
+    if(!filtered.length){ g.style.display='none'; em.style.display='block'; return; }
+    g.style.display=''; em.style.display='none';
+    displayList.forEach((d,i)=>{ g.appendChild(makeCard(d,i)); });
+  }
+
+  function makeCard(d,i){
+    const c=document.createElement('article');
+    c.className='card'+(isFaved(d.id)?' favored':'');
+    c.setAttribute('tabindex','0');
+    c.dataset.i=i; c.dataset.id=d.id;
+    const icon=CAT_ICONS[d.category]||'🍽️';
+    const ph=`<div class="ci-ph">${icon}</div>`;
+    const img=d.image?`<img src="${d.image}" alt="${d.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML+='${ph}'">`:ph;
+    const eraShort=d.era.split('·')[0].split('（')[0];
+    const eraColor=ERA_COLORS[d.era]||'var(--c1)';
+    c.innerHTML=`<span class="fav">${isFaved(d.id)?'❤️':'🤍'}</span>
+      <div class="ci">${img}<span class="ci-tg">${eraShort}</span><span class="era-tag" style="background:${eraColor}">${d.era}</span><span class="ci-hv">查看详情</span></div>
+      <div class="cb"><div class="cn">${d.name}</div><div class="cs">${cleanSource(d.source)||'来源待考'}</div><div class="cta">${(d.category.split(' ')[0])+' '+(d.category.split(' ')[1]||'')}</div></div>`;
+    c.onclick=()=>openM(i);
+    c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openM(i);}};
+    return c;
+  }
+
+  // ── Modal ──
+  function openM(i){
+    mIdx=i; const d=filtered[i];
+    document.getElementById('mdId').textContent=`#${d.id} ${d.name}`;
+    updateMdFavBtn(d.id);
+    const icon=CAT_ICONS[d.category]||'🍽️';
+    const ph2=d.image?`<img src="${d.image}" alt="${d.name}" onerror="this.parentElement.innerHTML='<div class=md-h-ph>${icon}</div>'">`:`<div class="md-h-ph">${icon}</div>`;
+    const srcLabel=cleanSource(d.source);
+    const srcHtml=srcLabel?`<span class="md-by">📖 ${srcLabel}</span>`:'';
+    document.getElementById('mdH').innerHTML=ph2+`<span class="md-bdg">${d.era}</span>${srcHtml}`;
+    const stars=Array(d.difficulty||1).fill('★').join('');
+    const effHtml=(d.effects&&d.effects.length)?`<div class="md-tag-effects">${d.effects.map(e=>`<span class="eff-tag">💊 ${e}</span>`).join('')}</div>`:'';
+    const myRate=RATINGS[d.id]||0;
+    const allRates=Object.values(RATINGS);
+    const avgRate=allRates.length ? (allRates.reduce((s,v)=>s+v,0)/allRates.length).toFixed(1) : null;
+    const ratingHtml=`<div class="rating-wrap">
+  <div class="rating-stars" id="ratingStars">
+    ${[1,2,3,4,5].map(n=>`<span data-n="${n}" class="${n<=myRate?'on':'off'}">★</span>`).join('')}
+  </div>
+  ${avgRate?`<span class="rating-avg">均分 ${avgRate}</span>`:''}
+  <span class="rating-my" id="ratingMy">${myRate?'我的 '+myRate+'★':'点击评分'}</span>
+</div>`;
+    let bd=`<h2 class="md-n">${d.name}</h2>
+${effHtml}
+${ratingHtml}
+<div class="md-mg">
+  <span class="md-tg">🌿 ${d.category}</span>
+  <span class="md-tg">📅 ${d.era}</span>
+  <span class="md-tg">🏆 ${d.cuisine||'地方菜'}</span>
+  <span class="md-tg">🔥 ${d.heat||'火候'}</span>
+  <span class="md-tg">⏱️ ${d.duration||'时长'}</span>
+  <span class="md-tg">🍳 ${d.utensils||'锅具'}</span>
+  <span class="md-tg md-dif">${stars}</span>
+</div>`;
+    if(d.history) bd+=`<div class="md-sc"><div class="md-sb">历史背景</div><p class="md-tx">${highlightHistory(d.history)}</p></div>`;
+    if(d.authorBio) bd+=`<div class="md-sc"><div class="md-sb">作者简介</div><p class="md-tx sm">${stripMd(d.authorBio)}</p></div>`;
+    if(d.ingredients) bd+=`<div class="md-sc"><div class="md-sb">食材·用量</div><p class="md-tx">${stripMd(d.ingredients)}</p></div>`;
+    if(d.steps){
+      const stps=d.steps.split('\n').filter(s=>s.trim());
+      const stpHtml=stps.map((s,i)=>`<div class="stp"><span class="sn">${i+1}</span><span class="md-tx" style="font-size:1rem">${s.replace(/^\d+\.\s*/,'')}</span></div>`).join('');
+      bd+=`<div class="md-sc"><div class="stp-hdr"><span class="md-sb" style="border:none;padding:0;font-size:.85rem">详细步骤</span><span style="font-size:.75rem;color:var(--mt)">第${mIdx+1}步/共${stps.length}步</span></div>
+        <div class="stp-prog"><div class="stp-bar" style="width:${Math.round(100/stps.length*1)}%"></div></div>
+        ${stpHtml}`;
+    }
+    if(d.tips) bd+=`<div class="md-sc"><div class="md-sb">烹饪要点</div><p class="md-tx sm">💡 ${stripMd(d.tips)}</p></div>`;
+    if(d.sourceText) bd+=`<div class="md-sc"><div class="md-sb">📜 古籍原文</div><p class="md-tx sm md-src">"${stripMd(d.sourceText)}"</p></div>`;
+    // Related recipes
+    const rels=DATA.filter(x=>x.id!==d.id&&(x.category===d.category||x.era===d.era)).slice(0,3);
+    if(rels.length){
+      bd+=`<div class="md-rel"><div class="rel-tl">相关推荐</div><div class="rel-grd">`;
+      rels.forEach(r=>{
+        const rIcon=CAT_ICONS[r.category]||'🍽️';
+        const rPh=r.image?`<img src="${r.image}" alt="${r.name}" onerror="this.parentElement.innerHTML='<div class=rel-ci-ph>${rIcon}</div>'">`:`<div class="rel-ci-ph">${rIcon}</div>`;
+        bd+=`<div class="rel-cr" data-rel="${r.id}">
+          <div class="rel-ci">${rPh}</div>
+          <div class="rel-cb"><div class="rel-cn">${r.name}</div><div class="rel-cs">${cleanSource(r.source)||r.era}</div></div>
+        </div>`;
+      });
+      bd+=`</div></div>`;
+    }
+    // Share buttons
+    bd+=`<div class="md-share">
+      <button class="share-btn" id="shareBtn">📤 分享</button>
+      <button class="share-btn" id="copyLinkBtn">🔗 复制链接</button>
+    </div>`;
+    document.getElementById('mdBd').innerHTML=bd;
+    document.querySelectorAll('.rel-cr').forEach(rc=>{
+      rc.onclick=()=>{ const rid=rc.dataset.rel; const ri=filtered.findIndex(x=>x.id===rid); if(ri>=0) openM(ri); else { curQ=''; document.getElementById('srch').value=''; filtered=[...DATA]; const fi=DATA.findIndex(x=>x.id===rid); if(fi>=0) openM(fi); } };
+    });
+    document.getElementById('shareBtn').onclick=()=>openShare(d);
+    document.getElementById('copyLinkBtn').onclick=()=>{ navigator.clipboard.writeText(location.origin+location.pathname+'?r='+d.id).then(()=>{alert('链接已复制！');}); };
+    document.getElementById('mdFav').onclick=()=>toggleFav(d.id);
+    const prevBtn=document.getElementById('mdPrev');
+    const nextBtn=document.getElementById('mdNext');
+    prevBtn.disabled=mIdx<=0;
+    nextBtn.disabled=mIdx>=filtered.length-1;
+    mb.classList.add('on');
+    document.body.style.overflow='hidden';
+    // Rating click
+    document.getElementById('ratingStars').onclick = (e)=>{
+      const n=parseInt(e.target.dataset.n);
+      if(!n) return;
+      RATINGS[d.id]=n; save(LS_RAT,RATINGS);
+      document.getElementById('ratingMy').textContent='我的 '+n+'★';
+      document.querySelectorAll('#ratingStars span').forEach(s=>{
+        const sn=parseInt(s.dataset.n);
+        s.className = (sn<=n?'on':'off');
+      });
+    };
+  }
+
+  function closeM(){ mb.classList.remove('on'); document.body.style.overflow=''; }
+
+  // ── Share popup ──
+  function openShare(d){
+    const txt=`🍜 ${d.name}\n📖 ${cleanSource(d.source)||''}\n🌿 ${d.category} | ${d.era}\n${d.history?stripMd(d.history).substring(0,80)+'…':''}\n\n来自「中华美食千百道」`;
+    document.getElementById('shareTxt').value=txt;
+    document.getElementById('sharePop').classList.add('on');
+    document.getElementById('copyBtn').onclick=()=>{
+      navigator.clipboard.writeText(document.getElementById('shareTxt').value).then(()=>{
+        const b=document.getElementById('copyBtn');
+        b.textContent='已复制 ✓'; b.style.background='#2d7d46';
+        setTimeout(()=>{ b.textContent='复制分享文字'; b.style.background=''; },1500);
+      });
+    };
+    document.getElementById('shareWb').onclick=()=>{
+      const u=encodeURIComponent(location.origin+location.pathname+'?r='+d.id);
+      const t=encodeURIComponent(`🍜 ${d.name} — 中华美食千百道`);
+      window.open(`https://service.weibo.com/share/share.php?url=${u}&title=${t}`,'_blank','width=600,height=500');
+    };
+    document.getElementById('closeShare').onclick=()=>document.getElementById('sharePop').classList.remove('on');
+    document.getElementById('sharePop').onclick=e=>{ if(e.target===document.getElementById('sharePop')) document.getElementById('sharePop').classList.remove('on'); };
+  }
+
+  // ── URL param for deep link ──
+  function checkUrlParam(){
+    const p=new URLSearchParams(location.search).get('r');
+    if(p&&DATA.length){ const i=DATA.findIndex(d=>d.id===p); if(i>=0){ setTimeout(()=>openM(i),300); } }
+  }
+
+  // ── Event listeners ──
+  document.getElementById('srch').addEventListener('input',e=>{
+    curQ=e.target.value;
+    if(curView!=='main') setView('main');
+    document.querySelectorAll('#fltSrcBody input').forEach(inp=>inp.checked=inp.dataset.word===curQ);
+    updateFilterCount('src');
+    addHist(curQ);
+    apply();
+  });
+  document.getElementById('rnd').onclick=()=>{ if(filtered.length){ const ri=Math.floor(Math.random()*filtered.length); openM(ri); } };
+  document.getElementById('mdX').onclick=closeM;
+  mb.addEventListener('click',e=>{ if(e.target===mb) closeM(); });
+  document.getElementById('mdPrev').addEventListener('click',()=>{ if(mIdx>0) openM(mIdx-1); });
+  document.getElementById('mdNext').addEventListener('click',()=>{ if(mIdx<filtered.length-1) openM(mIdx+1); });
+  document.getElementById('favBtn').onclick=()=>setView('favs');
+  document.getElementById('hdrTl').onclick=()=>{ clearAll(); setView('main'); apply(); };
+  document.addEventListener('keydown',e=>{
+    if(!mb.classList.contains('on')) return;
+    if(e.key==='Escape') closeM();
+    if(e.key==='ArrowLeft'){if(mIdx>0) openM(mIdx-1);}
+    if(e.key==='ArrowRight'){if(mIdx<filtered.length-1) openM(mIdx+1);}
+  });
+
+  // ── Music Engine ──
+  let audioCtx = null;
+  let masterGain = null;
+  let musicPlaying = false;
+  let musicTimer = null;
+  let melodyTimeout = null;
+  let droneOsc = null;
+  let droneGain = null;
+
+  // Pentatonic scale (Gong-Shang-Jue-Zhi-Yu) — pure Chinese classical
+  const PENTA = [261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25,784.00,880.00];
+  const MELODY_NOTES = PENTA;
+  const BELL_NOTES = [523.25,587.33,659.25,784.00,880.00,1046.50,1174.66,1318.51];
+
+  function startAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.18;
+      masterGain.connect(audioCtx.destination);
+    }
+    if(audioCtx.state==='suspended') audioCtx.resume();
+  }
+
+  function stopAudio(){
+    if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; }
+    if(melodyTimeout){ clearTimeout(melodyTimeout); melodyTimeout=null; }
+    if(droneOsc){ try{droneOsc.stop();}catch(e){} droneOsc=null; }
+    if(droneGain){ try{droneGain.disconnect();}catch(e){} droneGain=null; }
+  }
+
+  function playNote(freq,startTime,duration,vol,type='sine',vibHz=4.8){
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    // slight vibrato for guzheng feel
+    const lfo = audioCtx.createOscillator();
+    const lfoG = audioCtx.createGain();
+    lfo.frequency.value = vibHz;
+    lfoG.gain.value = freq * 0.008;
+    lfo.connect(lfoG);
+    lfoG.connect(osc.frequency);
+    lfo.start(startTime);
+    lfo.stop(startTime + duration + 0.1);
+    g.gain.setValueAtTime(0,startTime);
+    g.gain.linearRampToValueAtTime(vol,startTime+0.04);
+    g.gain.setValueAtTime(vol,startTime+0.04);
+    g.gain.exponentialRampToValueAtTime(0.001,startTime+duration);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(startTime);
+    osc.stop(startTime+duration+0.05);
+  }
+
+  function playDrone(){
+    if(!audioCtx) return;
+    // warm bass drone — two slightly detuned oscillators
+    droneGain = audioCtx.createGain();
+    droneGain.gain.value = 0;
+    droneGain.connect(masterGain);
+    [PENTA[0], PENTA[0]*1.002].forEach(f=>{
+      const o = audioCtx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const g2 = audioCtx.createGain();
+      g2.gain.value = 0.06;
+      o.connect(g2);
+      g2.connect(droneGain);
+      o.start();
+      droneOsc = o;
+    });
+    droneGain.gain.linearRampToValueAtTime(0.07,audioCtx.currentTime+2);
+  }
+
+  function stopDrone(){
+    if(droneGain){
+      try{droneGain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.5);}catch(e){}
+      setTimeout(()=>{ try{droneGain.disconnect();}catch(e){} droneGain=null; },600);
+    }
+    if(droneOsc){
+      setTimeout(()=>{ try{droneOsc.stop();}catch(e){} droneOsc=null; },600);
+    }
+  }
+
+  function generatePhrase(){
+    // Generate 3–5 note phrase with pentatonic elegance
+    const phraseLen = 3 + Math.floor(Math.random()*3);
+    const phrase = [];
+    let lastIdx = Math.floor(Math.random()*5);
+    phrase.push(lastIdx);
+    for(let i=1;i<phraseLen;i++){
+      // step-wise movement, occasional jump
+      const step = Math.random()<0.7 ? (Math.random()<0.5?1:-1) : (Math.random()<0.5?2:-2);
+      lastIdx = Math.max(0,Math.min(PENTA.length-1,lastIdx+step));
+      phrase.push(lastIdx);
+    }
+    return phrase;
+  }
+
+  function playMelodyPhrase(phrase,startOffset){
+    const now = audioCtx.currentTime + startOffset;
+    phrase.forEach((n,i)=>{
+      const noteDur = 1.0 + Math.random()*0.8;
+      const vol = 0.08 + Math.random()*0.05;
+      const freq = MELODY_NOTES[n];
+      const t = now + i * 0.85;
+      playNote(freq, t, noteDur, vol, 'sine', 4.5+Math.random()*1.5);
+    });
+    return phrase.length * 0.85;
+  }
+
+  function playBell(freq){
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(0.06,now+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,now+2.5);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(now);
+    osc.stop(now+2.6);
+  }
+
+  function scheduleMusic(){
+    if(!musicPlaying || !audioCtx) return;
+    const phraseCount = 2 + Math.floor(Math.random()*2);
+    let offset = 0;
+    const phrases = [];
+    for(let i=0;i<phraseCount;i++){
+      phrases.push(generatePhrase());
+    }
+    // Play phrases with gaps
+    phrases.forEach((p,i)=>{
+      const gap = i===0 ? 0 : 1.5 + Math.random();
+      offset += gap;
+      offset += playMelodyPhrase(p, offset);
+    });
+    // Random bell flourish
+    if(Math.random()<0.4){
+      setTimeout(()=>{
+        if(musicPlaying) playBell(BELL_NOTES[Math.floor(Math.random()*BELL_NOTES.length)]);
+      }, (offset + 0.5) * 1000);
+    }
+    // Schedule next phrase set
+    const phraseDuration = (offset + 3) * 1000;
+    musicTimer = setTimeout(scheduleMusic, phraseDuration);
+  }
+
+  function toggleMusic(){
+    const btn = document.getElementById('musicBtn');
+    if(!musicPlaying){
+      startAudio();
+      musicPlaying = true;
+      btn.classList.add('on');
+      localStorage.setItem(LS_MUSIC,'1');
+      playDrone();
+      scheduleMusic();
+    } else {
+      musicPlaying = false;
+      btn.classList.remove('on');
+      localStorage.setItem(LS_MUSIC,'0');
+      stopAudio();
+      stopDrone();
+    }
+  }
+
+  function initMusic(){
+    const saved = localStorage.getItem(LS_MUSIC);
+    if(saved==='1'){
+      // auto-start after user gesture
+      const btn = document.getElementById('musicBtn');
+      btn.addEventListener('click',()=>toggleMusic(),{once:true});
+    }
+    document.getElementById('musicBtn').addEventListener('click',()=>toggleMusic());
+  }
+
+  fetch('./recipes_data.json')
+    .then(r=>{if(!r.ok) throw new Error('Failed to load'); return r.json();})
+    .then(d=>{
+      DATA=d;
+      CATS={};
+      DATA.forEach(d=>{ const cat=d.category||'🍽️ 其他'; if(!CATS[cat]) CATS[cat]=[]; CATS[cat].push(d); });
+      filtered=[...DATA];
+      selEras=['全部'];
+      buildEraFilter(); buildTypeFilter(); buildCatFilter(); buildSrcFilter(); buildEffFilter();
+      buildQuickBar();
+      initMusic();
+      render(); initDaily(); renderHist(); checkUrlParam();
+    })
+    .catch(err=>{
+      document.getElementById('cnt').innerHTML='<strong style="color:red">加载失败: '+err.message+'</strong>';
+      console.error(err);
+    });
+})();
+</script>
+</body>
+</html>
