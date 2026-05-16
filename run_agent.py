@@ -393,6 +393,19 @@ def _is_destructive_command(cmd: str) -> bool:
     return False
 
 
+def _is_mcp_tool_parallel_safe(tool_name: str) -> bool:
+    """Check if an MCP tool comes from a server with parallel tool calls enabled.
+
+    Lazy-imports from ``tools.mcp_tool`` to avoid circular dependencies.
+    Returns False if the MCP module is not available.
+    """
+    try:
+        from tools.mcp_tool import is_mcp_tool_parallel_safe
+        return is_mcp_tool_parallel_safe(tool_name)
+    except Exception:
+        return False
+
+
 def _should_parallelize_tool_batch(tool_calls) -> bool:
     """Return True when a tool-call batch is safe to run concurrently."""
     if len(tool_calls) <= 1:
@@ -432,7 +445,9 @@ def _should_parallelize_tool_batch(tool_calls) -> bool:
             continue
 
         if tool_name not in _PARALLEL_SAFE_TOOLS:
-            return False
+            # Check if it's an MCP tool from a server that opted into parallel calls.
+            if not _is_mcp_tool_parallel_safe(tool_name):
+                return False
 
     return True
 
@@ -3027,6 +3042,24 @@ class AIAgent:
             parts.append(f"{type(e).__name__}({msg})" if msg else type(e).__name__)
         return " <- ".join(parts) if parts else type(error).__name__
 
+    def _is_provider_stream_parse_error(self, error: BaseException) -> bool:
+        """Return True for malformed provider streaming data from SDK parsers.
+
+        Some Anthropic-compatible streaming providers can send a malformed
+        event-stream frame.  The Anthropic SDK surfaces that as a plain
+        ``ValueError`` such as ``expected ident at line 1 column 149``.  That
+        is provider wire-format trouble, not local request validation, so it
+        should follow the same retry path as a truncated JSON body.
+        """
+        if getattr(self, "api_mode", None) != "anthropic_messages":
+            return False
+        if not isinstance(error, ValueError):
+            return False
+        if isinstance(error, (UnicodeEncodeError, json.JSONDecodeError)):
+            return False
+        message = str(error).strip().lower()
+        return "expected ident at line" in message
+
     def _log_stream_retry(
         self,
         *,
@@ -3237,11 +3270,20 @@ class AIAgent:
             except Exception:
                 _aux_cfg_provider = ""
             if client is None or not aux_model:
-                msg = (
-                    "⚠ No auxiliary LLM provider configured — context "
-                    "compression will drop middle turns without a summary. "
-                    "Run `hermes setup` or set OPENROUTER_API_KEY."
-                )
+                if _aux_cfg_provider and _aux_cfg_provider != "auto":
+                    msg = (
+                        "⚠ Configured auxiliary compression provider "
+                        f"'{_aux_cfg_provider}' is unavailable — context "
+                        "compression will drop middle turns without a summary. "
+                        "Check auxiliary.compression in config.yaml and "
+                        "reauthenticate that provider."
+                    )
+                else:
+                    msg = (
+                        "⚠ No auxiliary LLM provider configured — context "
+                        "compression will drop middle turns without a summary. "
+                        "Run `hermes setup` or set OPENROUTER_API_KEY."
+                    )
                 self._compression_warning = msg
                 self._emit_status(msg)
                 logger.warning(
@@ -4967,24 +5009,75 @@ class AIAgent:
         _save_trajectory_to_file(trajectory, self.model, completed)
 
     @staticmethod
-    def _decorate_xai_entitlement_error(detail: str) -> str:
-        """Append a friendly hint when xAI's OAuth surface returns an
-        entitlement-shaped error.
+    def _is_entitlement_failure(
+        error_context: Optional[Dict[str, Any]],
+        status_code: Optional[int],
+    ) -> bool:
+        """Detect subscription/entitlement 403s that masquerade as auth failures.
 
-        xAI's ``/v1/responses`` endpoint replies to OAuth tokens that lack a
-        SuperGrok / X Premium subscription with HTTP 403 carrying a body like::
+        Returned True only when the body text matches a known entitlement
+        shape AND the status is 401/403.  Refreshing an OAuth token cannot
+        fix an unsubscribed account, so callers should surface the error
+        instead of looping the credential pool.
+
+        Current matches:
+          * xAI OAuth: "do not have an active Grok subscription" /
+            "out of available resources" / "does not have permission" + "grok"
+
+        Extend here for new providers as we discover them (Anthropic's
+        Claude Max OAuth entitlement errors look distinct enough today that
+        the existing 1M-context-beta branch handles them; revisit if other
+        subscription tiers start producing the same loop signature).
+        """
+        if status_code not in (401, 403, None):
+            return False
+        if not isinstance(error_context, dict):
+            return False
+        message = str(error_context.get("message") or "").lower()
+        reason = str(error_context.get("reason") or "").lower()
+        haystack = f"{message} {reason}"
+        if not haystack.strip():
+            return False
+        if "do not have an active grok subscription" in haystack:
+            return True
+        if "out of available resources" in haystack and "grok" in haystack:
+            return True
+        if "does not have permission" in haystack and "grok" in haystack:
+            return True
+        return False
+
+    @staticmethod
+    def _decorate_xai_entitlement_error(detail: str) -> str:
+        """Append a neutral hint when xAI's OAuth surface returns the
+        permission-denied 403.
+
+        xAI's ``/v1/responses`` endpoint replies to several distinct failure
+        modes with the SAME body::
 
             {"code": "The caller does not have permission to execute the
              specified operation", "error": "You have either run out of
              available resources or do not have an active Grok subscription.
-             Manage subscriptions at https://grok.com/..."}
+             Manage subscriptions at https://grok.com/?_s=usage or subscribe
+             at https://grok.com/supergrok"}
 
-        The raw text is useful but the action the user needs to take (subscribe
-        on grok.com, or switch providers with ``/model``) isn't obvious from
-        the wire format.  Detect the entitlement shape and append a hint.
+        That body covers several real causes we cannot distinguish without
+        more info from xAI.  The most common (and least obvious) one is
+        that **X Premium+ does NOT include API access** — only standalone
+        SuperGrok subscribers can use Hermes against xai-oauth.  Lots of
+        users see Grok in their X app, assume it works here too, and hit
+        this 403 with no idea why.  Lead the hint with that.
 
-        Matched once per detail string — won't double-decorate if the upstream
-        already concatenated the same text.
+        Other possible causes:
+          * No Grok subscription at all
+          * SuperGrok tier doesn't include the requested model (e.g.
+            grok-4.3 may need a higher tier)
+          * Monthly quota exhausted (the ``?_s=usage`` URL hints at this)
+
+        Surface the raw xAI text verbatim and point at
+        https://grok.com/?_s=usage where the user can see WHICH applies.
+
+        Matched once per detail string — won't double-decorate if the
+        upstream already concatenated the same text.
         """
         if not detail:
             return detail
@@ -4997,11 +5090,16 @@ class AIAgent:
         if not is_entitlement:
             return detail
         hint = (
-            " — xAI OAuth account lacks SuperGrok / X Premium entitlement for "
-            "this model. Subscribe at https://grok.com or run `/model` to "
-            "switch providers."
+            " — xAI rejected this OAuth account. NOTE: X Premium+ does NOT "
+            "include xAI API access — only standalone SuperGrok subscribers "
+            "can use this provider. Other possible causes: no Grok "
+            "subscription, your tier doesn't include this model, or your "
+            "quota is exhausted. Check https://grok.com/?_s=usage to see "
+            "which, or run `/model` to switch providers."
         )
-        if hint.strip() in detail:
+        # Idempotency: detect prior decoration by a substring unique to the
+        # hint (not present in xAI's own body text).
+        if "X Premium+ does NOT include" in detail:
             return detail
         return f"{detail}{hint}"
 
@@ -5014,6 +5112,12 @@ class AIAgent:
         str(error) for everything else.
         """
         raw = str(error)
+
+        if (
+            isinstance(error, ValueError)
+            and "expected ident at line" in raw.lower()
+        ):
+            return f"Malformed provider streaming response: {raw[:300]}"
 
         # Cloudflare / proxy HTML pages: grab the <title> for a clean summary
         if "<!DOCTYPE" in raw or "<html" in raw:
@@ -7551,6 +7655,24 @@ class AIAgent:
             return False, True
 
         if effective_reason == FailoverReason.auth:
+            # Subscription/entitlement 403s look like auth failures on the
+            # wire but refresh cannot fix them — the OAuth token is
+            # already valid; the account simply lacks the entitlement
+            # (e.g. xAI OAuth without SuperGrok/X Premium for grok-4.3).
+            # Without this guard, ``try_refresh_current()`` keeps minting
+            # fresh tokens against the same unsubscribed account and the
+            # main agent loop spins re-issuing the same 403 until the
+            # user Ctrl+C's.  Surface the error instead so the friendly
+            # entitlement hint from ``_summarize_api_error`` can land.
+            if self._is_entitlement_failure(error_context, status_code):
+                logger.info(
+                    "Credential %s — entitlement-shaped 403 from %s; "
+                    "skipping pool refresh (account lacks subscription, "
+                    "not a transient auth failure).",
+                    status_code if status_code is not None else "auth",
+                    self.provider or "provider",
+                )
+                return False, has_retried_429
             refreshed = pool.try_refresh_current()
             if refreshed is not None:
                 logger.info(f"Credential auth failure — refreshed pool entry {getattr(refreshed, 'id', '?')}")
@@ -8445,6 +8567,7 @@ class AIAgent:
                         _is_conn_err = isinstance(
                             e, (_httpx.ConnectError, _httpx.RemoteProtocolError, ConnectionError)
                         )
+                        _is_stream_parse_err = self._is_provider_stream_parse_error(e)
 
                         # If the stream died AFTER some tokens were delivered:
                         # normally we don't retry (the user already saw text,
@@ -8484,7 +8607,10 @@ class AIAgent:
                                         for phrase in _SSE_PREVIEW_PHRASES
                                     )
                             _is_transient = (
-                                _is_timeout or _is_conn_err or _is_sse_conn_err_preview
+                                _is_timeout
+                                or _is_conn_err
+                                or _is_sse_conn_err_preview
+                                or _is_stream_parse_err
                             )
                             _can_silent_retry = (
                                 _partial_tool_in_flight
@@ -8582,7 +8708,7 @@ class AIAgent:
                                     for phrase in _SSE_CONN_PHRASES
                                 )
 
-                        if _is_timeout or _is_conn_err or _is_sse_conn_err:
+                        if _is_timeout or _is_conn_err or _is_sse_conn_err or _is_stream_parse_err:
                             # Transient network / timeout error. Retry the
                             # streaming request with a fresh connection first.
                             if _stream_attempt < _max_stream_retries:
@@ -8623,12 +8749,20 @@ class AIAgent:
                                 mid_tool_call=False,
                                 diag=request_client_holder.get("diag"),
                             )
-                            self._emit_status(
-                                "❌ Connection to provider failed after "
-                                f"{_max_stream_retries + 1} attempts. "
-                                "The provider may be experiencing issues — "
-                                "try again in a moment."
-                            )
+                            if _is_stream_parse_err:
+                                self._emit_status(
+                                    "❌ Provider returned malformed streaming data after "
+                                    f"{_max_stream_retries + 1} attempts. "
+                                    "The provider may be experiencing issues — "
+                                    "try again in a moment."
+                                )
+                            else:
+                                self._emit_status(
+                                    "❌ Connection to provider failed after "
+                                    f"{_max_stream_retries + 1} attempts. "
+                                    "The provider may be experiencing issues — "
+                                    "try again in a moment."
+                                )
                         else:
                             _err_lower = str(e).lower()
                             _is_stream_unsupported = (
@@ -14050,6 +14184,39 @@ class AIAgent:
                             "interrupted": True,
                         }
                     
+                    # Actionable hint for GitHub Models (Azure) 413 errors.
+                    # The free tier enforces a hard 8K token cap per request,
+                    # which Hermes' system prompt + tool schemas alone exceed.
+                    # Compression can't help — the floor is the system prompt
+                    # itself, not the conversation — so surface a clear "not
+                    # compatible" message instead of looping into three futile
+                    # compression attempts.
+                    if (
+                        status_code == 413
+                        and isinstance(_base, str)
+                        and "models.inference.ai.azure.com" in _base
+                    ):
+                        self._vprint(
+                            f"{self.log_prefix}   💡 GitHub Models free tier (models.inference.ai.azure.com) caps every",
+                            force=True,
+                        )
+                        self._vprint(
+                            f"{self.log_prefix}      request at ~8K tokens. Hermes' system prompt + tool schemas baseline",
+                            force=True,
+                        )
+                        self._vprint(
+                            f"{self.log_prefix}      exceeds that floor, so this endpoint cannot run an agentic loop.",
+                            force=True,
+                        )
+                        self._vprint(
+                            f"{self.log_prefix}      Use the `copilot` provider with a Copilot subscription token (`hermes",
+                            force=True,
+                        )
+                        self._vprint(
+                            f"{self.log_prefix}      setup` → GitHub Copilot), or pick any other provider.",
+                            force=True,
+                        )
+
                     # Check for 413 payload-too-large BEFORE generic 4xx handler.
                     # A 413 is a payload-size error — the correct response is to
                     # compress history and retry, not abort immediately.
@@ -14426,11 +14593,16 @@ class AIAgent:
                     # provider/network failure (malformed response body,
                     # truncated stream, routing layer corruption), not a
                     # local programming bug, and should be retried (#14782).
+                    # Exclude Anthropic stream parser ValueErrors for the
+                    # same reason: third-party Anthropic-compatible providers
+                    # can emit malformed event-stream frames that SDK parsers
+                    # raise as plain ValueError.
                     is_local_validation_error = (
                         isinstance(api_error, (ValueError, TypeError))
                         and not isinstance(
                             api_error, (UnicodeEncodeError, json.JSONDecodeError)
                         )
+                        and not self._is_provider_stream_parse_error(api_error)
                         # ssl.SSLError (and its subclass SSLCertVerificationError)
                         # inherits from OSError *and* ValueError via Python MRO,
                         # so the isinstance(ValueError) check above would
